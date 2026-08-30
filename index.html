@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14121C">
+<title>Ditari i stërvitjes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Figtree:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --night:#14121C;
+  --card:#1D1A28;
+  --card-2:#241F33;
+  --edge:#302941;
+  --cream:#EDE7DC;
+  --muted:#948CA6;
+  --violet:#A78BFA;
+  --amber:#F5C05E;
+  --green:#7BC47F;
+  --blue:#6FB3E0;
+  --orange:#F09A5B;
+  --radius:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--night);
+  color:var(--cream);
+  font-family:"Figtree",system-ui,-apple-system,sans-serif;
+  font-size:16px;line-height:1.5;
+  padding:0 0 env(safe-area-inset-bottom);
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:520px;margin:0 auto;padding:22px 18px 90px}
+.eyebrow{
+  font-family:"Space Grotesk",monospace;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);
+}
+h1{font-family:"Newsreader",Georgia,serif;font-weight:600;font-size:30px;line-height:1.1;margin:6px 0 2px}
+h2{font-family:"Newsreader",Georgia,serif;font-weight:600;font-size:20px;margin:0 0 12px}
+.sub{color:var(--muted);font-size:14px;margin:0}
+
+/* ---- header ---- */
+header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px}
+.daybadge{
+  flex:0 0 auto;text-align:center;background:var(--card);border:1px solid var(--edge);
+  border-radius:var(--radius);padding:8px 12px;min-width:74px
+}
+.daybadge b{display:block;font-family:"Space Grotesk",monospace;font-size:26px;line-height:1;font-weight:700}
+.daybadge span{font-family:"Space Grotesk",monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+/* ---- cards ---- */
+.card{background:var(--card);border:1px solid var(--edge);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.focus{border-left:3px solid var(--amber);background:var(--card-2)}
+.focus p{margin:0;font-size:15px}
+.focus .eyebrow{margin-bottom:6px;color:var(--amber)}
+
+/* ---- hero ---- */
+.total{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+.total b{font-family:"Space Grotesk",monospace;font-size:56px;font-weight:700;line-height:.9;font-variant-numeric:tabular-nums}
+.total i{font-style:normal;color:var(--muted);font-size:15px}
+.targetline{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:14px}
+.targetline .ok{color:var(--green)}
+
+/* ---- signature: shiriti matës ---- */
+.strip{display:flex;gap:2px;align-items:flex-end;height:34px;margin-bottom:6px}
+.tick{flex:1 1 0;min-width:2px;border-radius:2px;background:#2B2439;height:14px;transition:height .18s ease,background .18s ease}
+.tick.zone-min{height:20px}
+.tick.zone-max{height:26px;background:#312949}
+.tick.on{background:var(--violet);height:26px}
+.tick.on.zone-min{background:var(--green)}
+.tick.on.zone-max{background:var(--green);opacity:.75}
+.striplabels{display:flex;justify-content:space-between;font-family:"Space Grotesk",monospace;font-size:10px;color:var(--muted);letter-spacing:.08em}
+
+/* ---- buttons ---- */
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+button{
+  font-family:"Figtree",sans-serif;font-size:15px;font-weight:500;color:var(--cream);
+  background:var(--card-2);border:1px solid var(--edge);border-radius:11px;
+  padding:13px 0;cursor:pointer;transition:transform .12s ease,background .12s ease;
+}
+button:active{transform:scale(.96)}
+button:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+.addbtn{flex:1 1 0;min-width:58px;font-family:"Space Grotesk",monospace;font-weight:700;font-size:17px}
+.addbtn.primary{background:rgba(167,139,250,.16);border-color:rgba(167,139,250,.5);color:#C9B6FF}
+.undo{flex:0 0 52px;color:var(--muted);font-size:18px}
+.sessions{margin-top:12px;font-size:13px;color:var(--muted);font-family:"Space Grotesk",monospace;min-height:20px}
+.sessions b{color:var(--cream);font-weight:500}
+
+/* ---- chips ---- */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  display:inline-flex;align-items:center;gap:8px;padding:10px 13px;border-radius:999px;
+  border:1px solid var(--edge);background:var(--card-2);font-size:14px;cursor:pointer;
+  transition:background .12s ease,border-color .12s ease;
+}
+.chip:active{transform:scale(.97)}
+.chip .dot{width:9px;height:9px;border-radius:50%;background:var(--c);flex:0 0 auto;opacity:.5}
+.chip.on{background:#2E2745;border-color:#4A3F66}
+.chip.on{background:color-mix(in srgb,var(--c) 18%,transparent);border-color:color-mix(in srgb,var(--c) 55%,transparent)}
+.chip.on .dot{opacity:1}
+.chip.new::after{content:"e re";font-family:"Space Grotesk",monospace;font-size:9px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--amber);margin-left:2px}
+
+/* ---- note ---- */
+textarea{
+  width:100%;background:var(--card-2);border:1px solid var(--edge);border-radius:11px;
+  color:var(--cream);font-family:"Figtree",sans-serif;font-size:15px;padding:12px;resize:vertical;
+  min-height:78px;
+}
+textarea:focus{outline:none;border-color:var(--violet)}
+textarea::placeholder{color:#6E6683}
+
+/* ---- history ---- */
+.hist{display:flex;gap:5px;align-items:flex-end;height:76px;margin-bottom:8px}
+.hcol{flex:1 1 0;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:4px;cursor:default}
+.hbar{width:100%;border-radius:3px 3px 0 0;background:var(--violet);min-height:2px;opacity:.85}
+.hbar.met{background:var(--green)}
+.hbar.none{background:#2B2439}
+.hlbl{font-family:"Space Grotesk",monospace;font-size:9px;color:var(--muted);text-align:center}
+.stats{display:flex;gap:10px;margin-top:14px}
+.stat{flex:1;background:var(--card-2);border-radius:11px;padding:12px}
+.stat b{display:block;font-family:"Space Grotesk",monospace;font-size:22px;font-weight:700}
+.stat span{font-size:12px;color:var(--muted)}
+
+/* ---- misc ---- */
+.safety{border-left:3px solid var(--blue);background:var(--card-2);padding:12px 14px;border-radius:0 11px 11px 0;font-size:13.5px;color:#C9C2D6;margin-bottom:16px}
+.safety b{color:var(--cream);font-weight:600}
+.status{
+  position:fixed;left:0;right:0;bottom:0;background:rgba(20,18,28,.94);
+  backdrop-filter:blur(8px);border-top:1px solid var(--edge);
+  padding:11px 18px calc(11px + env(safe-area-inset-bottom));
+  font-family:"Space Grotesk",monospace;font-size:11.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted);text-align:center
+}
+.status.ok{color:var(--green)}
+.status.warn{color:var(--amber)}
+.status.err{color:#E88B8B}
+details{margin-top:8px}
+summary{font-size:13px;color:var(--muted);cursor:pointer;padding:8px 0}
+summary:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+input[type=date],input[type=text]{
+  background:var(--card-2);border:1px solid var(--edge);border-radius:11px;color:var(--cream);
+  font-family:"Figtree",sans-serif;font-size:16px;padding:12px;width:100%;margin-top:8px
+}
+.hint{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+.err{color:#E88B8B;font-size:13.5px;margin:10px 0 0}
+.logout{width:100%;margin-top:12px;color:#E88B8B;border-color:#4A2E38;background:rgba(232,139,139,.08)}
+.who{font-family:"Space Grotesk",monospace;font-size:12px;color:var(--muted);word-break:break-all}
+.hidden{display:none!important}
+.nav{display:flex;gap:8px;align-items:center;margin-bottom:14px}
+.nav button{flex:0 0 44px;padding:9px 0;font-size:16px}
+.nav .label{flex:1;text-align:center;font-size:14px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ============ HYRJA ============ -->
+<div class="wrap hidden" id="login">
+  <p class="eyebrow">Ditari i stërvitjes</p>
+  <h1>Hyr në llogari</h1>
+  <p class="sub">Të dhënat ndahen mes llogarive të familjes.</p>
+  <div class="card" style="margin-top:18px">
+    <label class="eyebrow" for="email">Email</label>
+    <input type="email" id="email" autocomplete="username" inputmode="email" placeholder="emri@shembull.com">
+    <label class="eyebrow" for="pass" style="display:block;margin-top:14px">Fjalëkalimi</label>
+    <input type="password" id="pass" autocomplete="current-password" placeholder="••••••••">
+    <div class="row"><button class="addbtn primary" id="loginBtn" style="flex:1 1 100%">Hyr</button></div>
+    <p class="err hidden" id="loginErr"></p>
+    <p class="hint">Llogaritë krijohen nga paneli i Supabase. Nëse ke harruar fjalëkalimin, ndryshohet po andej.</p>
+  </div>
+</div>
+
+<!-- ============ SETUP (empty state) ============ -->
+<div class="wrap hidden" id="setup">
+  <p class="eyebrow">Hapi i parë</p>
+  <h1>Vendos datën e nisjes</h1>
+  <p class="sub">Zgjidh ditën që dole nga materniteti. Kjo bëhet dita 1 e planit dhe ndahet me të dy telefonat.</p>
+  <div class="card" style="margin-top:18px">
+    <label class="eyebrow" for="startInput">Data e daljes</label>
+    <input type="date" id="startInput">
+    <div class="row"><button class="addbtn primary" id="saveStart" style="flex:1 1 100%">Ruaj dhe fillo</button></div>
+    <p class="hint">Mund ta ndryshosh më vonë te “Rregullimet”.</p>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="wrap hidden" id="app">
+
+  <header>
+    <div>
+      <p class="eyebrow" id="weekLbl">Java 1</p>
+      <h1>Ditari i stërvitjes</h1>
+      <p class="sub" id="dateLbl">—</p>
+    </div>
+    <div class="daybadge"><b id="dayNum">1</b><span>Dita</span></div>
+  </header>
+
+  <div class="nav">
+    <button id="prevDay" aria-label="Dita e mëparshme">←</button>
+    <div class="label" id="navLbl">Sot</div>
+    <button id="nextDay" aria-label="Dita tjetër">→</button>
+  </div>
+
+  <div class="card focus">
+    <p class="eyebrow">Fokusi i kësaj jave</p>
+    <p id="focusTxt">—</p>
+  </div>
+
+  <div class="card">
+    <div class="total"><b id="totalMin">0</b><i>minuta tummy time</i></div>
+    <div class="targetline">
+      <span id="targetTxt">Synimi: —</span>
+      <span id="metTxt"></span>
+    </div>
+    <div class="strip" id="strip" role="img" aria-label="Shiriti i minutave"></div>
+    <div class="striplabels"><span>0</span><span id="stripMid"></span><span id="stripMax"></span></div>
+
+    <div class="row">
+      <button class="addbtn" data-add="1">+1</button>
+      <button class="addbtn" data-add="2">+2</button>
+      <button class="addbtn primary" data-add="3">+3</button>
+      <button class="addbtn" data-add="5">+5</button>
+      <button class="undo" id="undoBtn" aria-label="Hiq seancën e fundit">↺</button>
+    </div>
+    <div class="sessions" id="sessLine"></div>
+  </div>
+
+  <div class="card">
+    <h2>Aktivitetet e ditës</h2>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div class="card">
+    <h2>Si shkoi sot</h2>
+    <textarea id="note" placeholder="P.sh. e toleroi mirë mbi gjoks, u mërzit në dysheme pas 2 minutash…"></textarea>
+  </div>
+
+  <div class="safety">
+    <b>Vetëm zgjuar dhe nën mbikëqyrje.</b> Për gjumë gjithmonë në shpinë. Jo brenda 20–30 minutave pas ushqyerjes. Ndalo para se të fillojë të qajë.
+  </div>
+
+  <div class="card">
+    <h2>14 ditët e fundit</h2>
+    <div class="hist" id="hist"></div>
+    <div class="stats">
+      <div class="stat"><b id="stWeek">0</b><span>min këtë javë</span></div>
+      <div class="stat"><b id="stAvg">0</b><span>mesatarja/ditë</span></div>
+      <div class="stat"><b id="stStreak">0</b><span>ditë rresht</span></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>Rregullimet</summary>
+    <div class="card" style="margin-top:8px">
+      <label class="eyebrow" for="startInput2">Data e ditës 1</label>
+      <input type="date" id="startInput2">
+      <p class="hint" id="cfgHint">—</p>
+      <p class="eyebrow" style="margin-top:18px">Llogaria</p>
+      <p class="who" id="who">—</p>
+      <button class="logout" id="logoutBtn">Dil nga llogaria</button>
+    </div>
+  </details>
+</div>
+
+<div class="status" id="status">Duke u ngarkuar…</div>
+
+<script>
+/* ============================================================
+   KONFIGURIMI — i plotësuar. Projekti: Dashboard Bebi
+   Çelësi publishable është publik nga natyra; siguria varet nga RLS.
+   ============================================================ */
+const SUPABASE_URL = "https://slcsjzgpbxvajxtvvosf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Ndo_W3oVZV6a30mfS2SJ3w_swM-0PNI";
+/* ============================================================ */
+
+// Pranon si "https://xxx.supabase.co" ashtu edhe "https://xxx.supabase.co/rest/v1/"
+const BASE = SUPABASE_URL.replace(/\/+$/,"").replace(/\/rest\/v1$/,"");
+const REST = SUPABASE_URL ? BASE + "/rest/v1" : null;
+const AUTH = SUPABASE_URL ? BASE + "/auth/v1" : null;
+const ONLINE_MODE = Boolean(SUPABASE_URL && SUPABASE_KEY);
+const SYNC = () => ONLINE_MODE && !!session;   // sinkronizohet vetëm kur ka sesion
+
+/* ---------- Plani: synimet ditore ---------- */
+function target(day){
+  const solo = {1:[2,3],2:[3,4],3:[4,5],4:[5,5],5:[5,6],6:[6,7],7:[7,8]};
+  if (solo[day]) return {min:solo[day][0], max:solo[day][1], plus:false};
+  if (day<=14) return {min:8,  max:12, plus:false};
+  if (day<=21) return {min:10, max:15, plus:false};
+  if (day<=28) return {min:12, max:15, plus:false};
+  if (day<=35) return {min:15, max:20, plus:false};
+  if (day<=42) return {min:15, max:25, plus:false};
+  if (day<=49) return {min:20, max:25, plus:false};
+  if (day<=56) return {min:20, max:30, plus:false};
+  if (day<=70) return {min:25, max:30, plus:false};
+  return {min:30, max:36, plus:true};
+}
+function weekOf(day){ return Math.min(13, Math.ceil(day/7)); }
+const FOCUS = {
+  1:"Përshtatje dhe kontakt. Tummy time mbi gjoksin e prindit, shumë shkurt. Mos u shqetëso nëse nuk e toleron.",
+  2:"3–5 seanca të shkurtra në ditë. Shto side-lying nga një minutë për anë.",
+  3:"Fut një lodër ose objekt me kontrast të lartë, rreth 20–30 cm larg fytyrës.",
+  4:"Ndrysho vendin: dysheme, gjoks, prehër. Shto “ndjekjen me sy”, 3–5 min.",
+  5:"Fillon faza e dytë. Aktivitetet ndahen gjatë gjithë ditës, jo të gjitha njëherësh.",
+  6:"Seancat mund të zgjaten pak. Deri në javën e 7-të synohet 15–30 min në ditë.",
+  7:"“Shiko lodrën” — vendos objektin përpara dhe lëre ta ngrejë kokën vetë. Mos ia shtyj kokën.",
+  8:"Rutinë e përzier: tummy time, stimulim vizual, lëvizje të lira, side-lying.",
+  9:"“Zëri nga anash” — flitini nga njëra anë, pastaj nga tjetra, që ta kërkojë burimin.",
+  10:"Pa ushtrime të reja. Cilësia dhe përsëritja vlejnë më shumë se larmia.",
+  11:"Kontrolli i kokës: prit ta ngrejë, ta mbajë pak, ta kthejë majtas/djathtas. Mos ia mbaj ti.",
+  12:"Tummy time në forma të ndryshme; side-lying si alternativë kur lodhet.",
+  13:"Ditët e fundit të planit. Rutinë e qetë mëngjes/mesditë/pasdite, mbrëmja pa ushtrime."
+};
+const ACTIVITIES = [
+  {id:"kontakt",  label:"Kontakt lëkurë më lëkurë", color:"var(--violet)", from:1},
+  {id:"fytyra",   label:"Fytyra + të folur",        color:"var(--amber)",  from:1},
+  {id:"levizje",  label:"Lëvizje të lira",          color:"var(--blue)",   from:1},
+  {id:"side",     label:"Side-lying (të dy anët)",  color:"var(--orange)", from:3},
+  {id:"kenge",    label:"Këngë",                    color:"var(--violet)", from:1},
+  {id:"lodra",    label:"Lodër me kontrast",        color:"var(--green)",  from:15},
+  {id:"syte",     label:"Ndjekje me sy",            color:"var(--amber)",  from:22},
+  {id:"zeri",     label:"Zë nga anash",             color:"var(--blue)",   from:57}
+];
+
+/* ---------- Ndihmës ---------- */
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2,"0");
+const iso = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const todayISO = () => iso(new Date());
+function addDays(isoStr,n){ const d=new Date(isoStr+"T12:00:00"); d.setDate(d.getDate()+n); return iso(d); }
+function daysBetween(a,b){
+  return Math.round((new Date(b+"T12:00:00") - new Date(a+"T12:00:00"))/86400000);
+}
+function fmtDate(isoStr){
+  const m=["janar","shkurt","mars","prill","maj","qershor","korrik","gusht","shtator","tetor","nëntor","dhjetor"];
+  const dw=["e diel","e hënë","e martë","e mërkurë","e enjte","e premte","e shtunë"];
+  const d=new Date(isoStr+"T12:00:00");
+  return dw[d.getDay()]+", "+d.getDate()+" "+m[d.getMonth()];
+}
+const sum = a => a.reduce((x,y)=>x+y,0);
+
+/* ---------- Gjendja ---------- */
+const LS = "ditari-bebe-v1";
+let state = { start:null, view:todayISO(), logs:{}, pending:{} };
+
+function loadLocal(){
+  try{
+    const raw = localStorage.getItem(LS);
+    if(raw){ const o=JSON.parse(raw); state.start=o.start||null; state.logs=o.logs||{}; state.pending=o.pending||{}; }
+  }catch(e){ /* localStorage i bllokuar — vazhdo pa cache */ }
+}
+function saveLocal(){
+  try{ localStorage.setItem(LS, JSON.stringify({start:state.start, logs:state.logs, pending:state.pending})); }catch(e){}
+}
+function blank(d){ return {log_date:d, sessions:[], activities:[], note:""}; }
+function entry(d){ return state.logs[d] || (state.logs[d]=blank(d)); }
+
+/* ---------- Statusi ---------- */
+let statusTimer=null;
+function status(msg, cls=""){
+  const el=$("#status"); el.textContent=msg; el.className="status "+cls;
+  clearTimeout(statusTimer);
+  if(cls==="ok") statusTimer=setTimeout(()=>{ el.textContent = SYNC() ? "I sinkronizuar" : "Ruajtur në këtë telefon"; el.className="status"; },2200);
+}
+
+/* ---------- Sesioni (Supabase Auth) ---------- */
+const SKEY = "ditari-bebe-session";
+let session = null;   // {access_token, refresh_token, expires_at, email}
+
+function loadSession(){
+  try{ session = JSON.parse(localStorage.getItem(SKEY) || "null"); }catch(e){ session=null; }
+}
+function saveSession(s){
+  session = s;
+  try{ s ? localStorage.setItem(SKEY, JSON.stringify(s)) : localStorage.removeItem(SKEY); }catch(e){}
+}
+function sessionFrom(j, fallbackEmail){
+  return {
+    access_token:  j.access_token,
+    refresh_token: j.refresh_token,
+    expires_at:    Date.now() + ((j.expires_in || 3600) * 1000),
+    email:         (j.user && j.user.email) || fallbackEmail || (session && session.email) || ""
+  };
+}
+function authMsg(j){
+  const raw = (j.error_description || j.msg || j.message || "").toLowerCase();
+  if(raw.includes("invalid login")) return "Email ose fjalëkalim i gabuar.";
+  if(raw.includes("email not confirmed")) return "Emaili nuk është konfirmuar. Konfirmoje nga paneli i Supabase.";
+  if(raw.includes("too many") || raw.includes("rate")) return "Shumë përpjekje. Prit pak dhe provo sërish.";
+  return j.error_description || j.msg || j.message || "Hyrja dështoi.";
+}
+
+async function signIn(email, password){
+  const r = await fetch(AUTH + "/token?grant_type=password", {
+    method:"POST",
+    headers:{"apikey":SUPABASE_KEY, "Content-Type":"application/json"},
+    body: JSON.stringify({email, password})
+  });
+  const j = await r.json();
+  if(!r.ok) throw new Error(authMsg(j));
+  saveSession(sessionFrom(j, email));
+}
+async function refreshSession(){
+  if(!session || !session.refresh_token) throw new Error("Pa sesion");
+  const r = await fetch(AUTH + "/token?grant_type=refresh_token", {
+    method:"POST",
+    headers:{"apikey":SUPABASE_KEY, "Content-Type":"application/json"},
+    body: JSON.stringify({refresh_token: session.refresh_token})
+  });
+  const j = await r.json();
+  if(!r.ok){ saveSession(null); throw new Error("Sesioni skadoi"); }
+  saveSession(sessionFrom(j));
+}
+async function token(){
+  if(!session) throw new Error("Pa sesion");
+  if(Date.now() > session.expires_at - 60000) await refreshSession();
+  return session.access_token;
+}
+function hdr(t){
+  return {"apikey":SUPABASE_KEY, "Authorization":"Bearer "+t, "Content-Type":"application/json"};
+}
+async function signOut(){
+  try{
+    if(session) await fetch(AUTH+"/logout", {method:"POST", headers:hdr(session.access_token)});
+  }catch(e){}
+  saveSession(null);
+  try{ localStorage.removeItem(LS); }catch(e){}
+  location.reload();
+}
+
+/* ---------- Rrjeti ---------- */
+async function apiGet(path){
+  let t = await token();
+  let r = await fetch(REST+path, {headers:hdr(t)});
+  if(r.status===401){ await refreshSession(); t = await token(); r = await fetch(REST+path, {headers:hdr(t)}); }
+  if(!r.ok) throw new Error("GET "+r.status);
+  return r.json();
+}
+async function apiUpsert(table, body){
+  const opts = t => ({
+    method:"POST",
+    headers:Object.assign(hdr(t), {"Prefer":"resolution=merge-duplicates,return=minimal"}),
+    body:JSON.stringify(body)
+  });
+  let t = await token();
+  let r = await fetch(REST+"/"+table, opts(t));
+  if(r.status===401){ await refreshSession(); t = await token(); r = await fetch(REST+"/"+table, opts(t)); }
+  if(!r.ok) throw new Error("POST "+r.status+" "+(await r.text()));
+}
+
+async function pullAll(){
+  if(!SYNC()) return;
+  const s = await apiGet("/app_settings?select=key,value&key=eq.start_date");
+  if(s.length) state.start = s[0].value;
+  const from = state.start ? state.start : addDays(todayISO(),-30);
+  const rows = await apiGet("/daily_log?select=*&log_date=gte."+from+"&order=log_date.asc");
+  rows.forEach(r=>{
+    if(state.pending[r.log_date]) return;      // ndryshimet e paruajtura kanë përparësi
+    state.logs[r.log_date] = {
+      log_date:r.log_date,
+      sessions:Array.isArray(r.sessions)?r.sessions:[],
+      activities:Array.isArray(r.activities)?r.activities:[],
+      note:r.note||""
+    };
+  });
+  saveLocal();
+}
+
+async function flush(){
+  if(!SYNC()) return;
+  const dates = Object.keys(state.pending);
+  if(!dates.length) return;
+  status("Duke ruajtur…","warn");
+  const rows = dates.map(d=>{
+    const e = entry(d);
+    return {log_date:d, sessions:e.sessions, activities:e.activities, note:e.note, updated_at:new Date().toISOString()};
+  });
+  try{
+    await apiUpsert("daily_log", rows);
+    dates.forEach(d=>delete state.pending[d]);
+    saveLocal();
+    status("Ruajtur","ok");
+  }catch(err){
+    status("Pa lidhje — do të ruhet kur të kthehet interneti","warn");
+  }
+}
+let flushTimer=null;
+function queue(d){
+  state.pending[d]=true; saveLocal(); render();
+  if(!SYNC()){ status("Ruajtur në këtë telefon","ok"); return; }
+  clearTimeout(flushTimer); flushTimer=setTimeout(flush,900);
+}
+
+/* ---------- Vizatimi ---------- */
+function render(){
+  const d = state.view;
+  const day = daysBetween(state.start, d) + 1;
+  const e = entry(d);
+  const total = sum(e.sessions);
+
+  $("#dayNum").textContent = day > 0 ? day : "–";
+  $("#dateLbl").textContent = fmtDate(d);
+  $("#navLbl").textContent = d===todayISO() ? "Sot" : (d===addDays(todayISO(),-1) ? "Dje" : "Ditë e mëparshme");
+  $("#nextDay").disabled = d >= todayISO();
+  $("#nextDay").style.opacity = d >= todayISO() ? .35 : 1;
+
+  const wk = weekOf(Math.max(day,1));
+  $("#weekLbl").textContent = day>84 ? "Ditët 85–90" : "Java "+wk;
+  $("#focusTxt").textContent = FOCUS[wk] || FOCUS[13];
+
+  const t = target(Math.max(day,1));
+  $("#totalMin").textContent = total;
+  $("#targetTxt").textContent = "Synimi: "+t.min+"–"+(t.plus? "30+" : t.max)+" min";
+  $("#metTxt").textContent = total>=t.min ? "✓ arritur" : "";
+  $("#metTxt").className = total>=t.min ? "ok" : "";
+  $("#stripMid").textContent = t.min;
+  $("#stripMax").textContent = t.plus ? "30+" : t.max;
+
+  const strip=$("#strip"); strip.innerHTML="";
+  for(let i=1;i<=t.max;i++){
+    const s=document.createElement("div");
+    s.className="tick"+(i<=t.min?" zone-min":" zone-max")+(i<=total?" on":"");
+    strip.appendChild(s);
+  }
+
+  $("#sessLine").innerHTML = e.sessions.length
+    ? "Seancat: <b>"+e.sessions.join(" + ")+"</b> &nbsp;·&nbsp; "+e.sessions.length+" nga 3–5"
+    : "Ende asnjë seancë sot.";
+
+  const chips=$("#chips"); chips.innerHTML="";
+  ACTIVITIES.filter(a=>day>=a.from).forEach(a=>{
+    const b=document.createElement("button");
+    b.className="chip"+(e.activities.includes(a.id)?" on":"")+((day-a.from<7 && a.from>1)?" new":"");
+    b.style.setProperty("--c",a.color);
+    b.setAttribute("aria-pressed", e.activities.includes(a.id));
+    b.innerHTML='<span class="dot"></span>'+a.label;
+    b.onclick=()=>{
+      const i=e.activities.indexOf(a.id);
+      i>=0 ? e.activities.splice(i,1) : e.activities.push(a.id);
+      queue(d);
+    };
+    chips.appendChild(b);
+  });
+
+  if(document.activeElement !== $("#note")) $("#note").value = e.note;
+
+  renderHistory(day);
+  $("#startInput2").value = state.start;
+  $("#who").textContent = session ? session.email : "—";
+  $("#cfgHint").textContent = SYNC()
+    ? "Të dhënat ndahen mes telefonave përmes Supabase."
+    : "Pa lidhje — të dhënat ruhen përkohësisht në këtë telefon.";
+}
+
+function renderHistory(curDay){
+  const h=$("#hist"); h.innerHTML="";
+  const days=[];
+  for(let i=13;i>=0;i--) days.push(addDays(state.view,-i));
+  const maxT = Math.max(...days.map(d=>target(Math.max(daysBetween(state.start,d)+1,1)).max), 10);
+  days.forEach(d=>{
+    const dn = daysBetween(state.start,d)+1;
+    const tot = state.logs[d] ? sum(state.logs[d].sessions) : 0;
+    const tg = target(Math.max(dn,1));
+    const col=document.createElement("div"); col.className="hcol";
+    const bar=document.createElement("div");
+    bar.className="hbar"+(tot===0?" none":(tot>=tg.min?" met":""));
+    bar.style.height = Math.max(2, Math.round((tot/maxT)*56))+"px";
+    bar.title = fmtDate(d)+": "+tot+" min";
+    const lbl=document.createElement("div"); lbl.className="hlbl";
+    lbl.textContent = dn>0 && dn<=90 ? dn : "";
+    col.appendChild(bar); col.appendChild(lbl); h.appendChild(col);
+  });
+
+  const last7=[]; for(let i=6;i>=0;i--) last7.push(addDays(state.view,-i));
+  const tots = last7.map(d=> state.logs[d] ? sum(state.logs[d].sessions) : 0);
+  $("#stWeek").textContent = sum(tots);
+  $("#stAvg").textContent = Math.round(sum(tots)/7);
+
+  let streak=0, cur=state.view;
+  while(state.logs[cur] && sum(state.logs[cur].sessions)>0){ streak++; cur=addDays(cur,-1); }
+  $("#stStreak").textContent = streak;
+}
+
+/* ---------- Ngjarjet ---------- */
+document.querySelectorAll("[data-add]").forEach(b=>{
+  b.onclick=()=>{ entry(state.view).sessions.push(Number(b.dataset.add)); queue(state.view); };
+});
+$("#undoBtn").onclick=()=>{ const e=entry(state.view); if(e.sessions.length){ e.sessions.pop(); queue(state.view);} };
+$("#prevDay").onclick=()=>{ state.view=addDays(state.view,-1); render(); };
+$("#nextDay").onclick=()=>{ if(state.view<todayISO()){ state.view=addDays(state.view,1); render(); } };
+let noteTimer=null;
+$("#note").oninput=()=>{
+  entry(state.view).note=$("#note").value;
+  clearTimeout(noteTimer); noteTimer=setTimeout(()=>queue(state.view),700);
+};
+$("#startInput2").onchange=async e=>{ await setStart(e.target.value); };
+$("#saveStart").onclick=async()=>{
+  const v=$("#startInput").value;
+  if(!v){ status("Zgjidh një datë","err"); return; }
+  await setStart(v); boot2();
+};
+async function setStart(v){
+  state.start=v; saveLocal();
+  if(SYNC()){
+    try{ await apiUpsert("app_settings",[{key:"start_date", value:v}]); status("Data u ruajt","ok"); }
+    catch(err){ status("Data u ruajt vetëm lokalisht","warn"); }
+  }
+  render();
+}
+window.addEventListener("online", flush);
+
+/* ---------- Nisja ---------- */
+function boot2(){
+  $("#login").classList.add("hidden");
+  $("#setup").classList.add("hidden");
+  $("#app").classList.remove("hidden");
+  state.view=todayISO();
+  render();
+  status(SYNC() ? "I sinkronizuar" : "Ruajtur në këtë telefon");
+}
+
+function showLogin(msg){
+  $("#login").classList.remove("hidden");
+  $("#setup").classList.add("hidden");
+  $("#app").classList.add("hidden");
+  $("#status").textContent = "Nuk je i identifikuar";
+  $("#status").className = "status";
+  if(msg){ $("#loginErr").textContent=msg; $("#loginErr").classList.remove("hidden"); }
+}
+
+$("#loginBtn").onclick = doLogin;
+$("#pass").addEventListener("keydown", e=>{ if(e.key==="Enter") doLogin(); });
+$("#logoutBtn").onclick = ()=>{ if(confirm("Të dalësh nga llogaria në këtë telefon?")) signOut(); };
+
+async function doLogin(){
+  const email=$("#email").value.trim(), pw=$("#pass").value;
+  $("#loginErr").classList.add("hidden");
+  if(!email || !pw){ $("#loginErr").textContent="Plotëso emailin dhe fjalëkalimin."; $("#loginErr").classList.remove("hidden"); return; }
+  $("#loginBtn").disabled=true; $("#loginBtn").textContent="Duke hyrë…";
+  try{
+    await signIn(email, pw);
+    $("#pass").value="";
+    await afterAuth();
+  }catch(err){
+    $("#loginErr").textContent=err.message; $("#loginErr").classList.remove("hidden");
+  }finally{
+    $("#loginBtn").disabled=false; $("#loginBtn").textContent="Hyr";
+  }
+}
+
+async function afterAuth(){
+  try{ await pullAll(); }
+  catch(err){ status("Pa lidhje me serverin — po punohet lokalisht","warn"); }
+  if(!state.start){
+    $("#login").classList.add("hidden");
+    $("#app").classList.add("hidden");
+    $("#setup").classList.remove("hidden");
+    $("#startInput").value = todayISO();
+    $("#status").textContent = "Lidhur me serverin";
+    return;
+  }
+  boot2();
+  flush();
+}
+
+async function boot(){
+  loadLocal();
+  loadSession();
+  $("#startInput").value = todayISO();
+  if(!ONLINE_MODE){                              // pa konfigurim: modalitet lokal
+    if(state.start){ boot2(); }
+    else { $("#setup").classList.remove("hidden"); $("#status").textContent="Modaliteti lokal"; }
+    return;
+  }
+  if(!session){ showLogin(); return; }
+  try{ await token(); }                          // rifresko nëse ka skaduar
+  catch(err){
+    if(navigator.onLine){ showLogin("Sesioni skadoi. Hyr sërish."); return; }
+  }
+  await afterAuth();
+}
+boot();
+</script>
+</body>
+</html>
