@@ -86,6 +86,21 @@ button:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
 .addbtn{flex:1 1 0;min-width:58px;font-family:"Space Grotesk",monospace;font-weight:700;font-size:17px}
 .addbtn.primary{background:rgba(167,139,250,.16);border-color:rgba(167,139,250,.5);color:#C9B6FF}
 .undo{flex:0 0 52px;color:var(--muted);font-size:18px}
+.composer{margin-top:16px;border:1px dashed #3A3150;border-radius:12px;padding:13px}
+.ctop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
+.clbl{font-size:13.5px;color:var(--muted)}
+.cval{font-family:"Space Grotesk",monospace;font-size:14px;color:var(--muted)}
+.cval b{font-size:24px;font-weight:700;color:var(--cream);font-variant-numeric:tabular-nums}
+.composer .row{margin-top:10px}
+.commit{width:100%;margin-top:10px;background:rgba(123,196,127,.14);border-color:rgba(123,196,127,.45);color:#A9DFAC;font-weight:600}
+.commit:disabled{background:var(--card-2);border-color:var(--edge);color:#5F5875;cursor:default}
+.sesslist{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.srow{display:flex;align-items:center;gap:10px;background:var(--card-2);border-radius:10px;padding:9px 11px}
+.stime{font-family:"Space Grotesk",monospace;font-size:13px;color:var(--muted);min-width:44px}
+.smin{flex:1;font-size:14.5px}
+.smin b{font-family:"Space Grotesk",monospace}
+.sdel{flex:0 0 30px;padding:5px 0;font-size:15px;color:var(--muted);background:transparent;border:none}
+.sempty{font-size:13.5px;color:var(--muted)}
 .sessions{margin-top:12px;font-size:13px;color:var(--muted);font-family:"Space Grotesk",monospace;min-height:20px}
 .sessions b{color:var(--cream);font-weight:500}
 
@@ -219,14 +234,21 @@ input[type=date],input[type=text]{
     <div class="strip" id="strip" role="img" aria-label="Shiriti i minutave"></div>
     <div class="striplabels"><span>0</span><span id="stripMid"></span><span id="stripMax"></span></div>
 
-    <div class="row">
-      <button class="addbtn" data-add="1">+1</button>
-      <button class="addbtn" data-add="2">+2</button>
-      <button class="addbtn primary" data-add="3">+3</button>
-      <button class="addbtn" data-add="5">+5</button>
-      <button class="undo" id="undoBtn" aria-label="Hiq seancën e fundit">↺</button>
+    <div class="composer">
+      <div class="ctop">
+        <span class="clbl">Seanca që po bën tani</span>
+        <span class="cval"><b id="pendingVal">0</b> min</span>
+      </div>
+      <div class="row">
+        <button class="addbtn" data-add="1">+1</button>
+        <button class="addbtn" data-add="2">+2</button>
+        <button class="addbtn primary" data-add="3">+3</button>
+        <button class="addbtn" data-add="5">+5</button>
+        <button class="undo" id="minusBtn" aria-label="Hiq një minutë">−</button>
+      </div>
+      <button class="commit" id="commitBtn" disabled>Regjistro seancën</button>
     </div>
-    <div class="sessions" id="sessLine"></div>
+    <div class="sesslist" id="sessList"></div>
   </div>
 
   <div class="card">
@@ -344,19 +366,29 @@ const sum = a => a.reduce((x,y)=>x+y,0);
 
 /* ---------- Gjendja ---------- */
 const LS = "ditari-bebe-v1";
-let state = { start:null, view:todayISO(), logs:{}, pending:{} };
+let state = { start:null, view:todayISO(), logs:{}, pending:{}, draft:{} };
 
 function loadLocal(){
   try{
     const raw = localStorage.getItem(LS);
-    if(raw){ const o=JSON.parse(raw); state.start=o.start||null; state.logs=o.logs||{}; state.pending=o.pending||{}; }
+    if(raw){ const o=JSON.parse(raw); state.start=o.start||null; state.logs=o.logs||{}; state.pending=o.pending||{}; state.draft=o.draft||{}; }
+    Object.values(state.logs).forEach(normalize);
   }catch(e){ /* localStorage i bllokuar — vazhdo pa cache */ }
 }
 function saveLocal(){
-  try{ localStorage.setItem(LS, JSON.stringify({start:state.start, logs:state.logs, pending:state.pending})); }catch(e){}
+  try{ localStorage.setItem(LS, JSON.stringify({start:state.start, logs:state.logs, pending:state.pending, draft:state.draft})); }catch(e){}
 }
 function blank(d){ return {log_date:d, sessions:[], activities:[], note:""}; }
 function entry(d){ return state.logs[d] || (state.logs[d]=blank(d)); }
+// Seancat ruhen si {m:minuta, t:"HH:MM"}. Formati i vjetër ishte thjesht një numër.
+function normalize(e){
+  if(e && Array.isArray(e.sessions))
+    e.sessions = e.sessions.map(x => typeof x === "number" ? {m:x, t:null} : x);
+  return e;
+}
+function mins(e){ return e && e.sessions ? e.sessions.reduce((a,s)=>a+(s.m||0),0) : 0; }
+function nowHM(){ const d=new Date(); return pad(d.getHours())+":"+pad(d.getMinutes()); }
+function draftOf(d){ return state.draft[d] || 0; }
 
 /* ---------- Statusi ---------- */
 let statusTimer=null;
@@ -461,7 +493,7 @@ async function pullAll(){
     if(state.pending[r.log_date]) return;      // ndryshimet e paruajtura kanë përparësi
     state.logs[r.log_date] = {
       log_date:r.log_date,
-      sessions:Array.isArray(r.sessions)?r.sessions:[],
+      sessions:Array.isArray(r.sessions)?r.sessions.map(x=>typeof x==="number"?{m:x,t:null}:x):[],
       activities:Array.isArray(r.activities)?r.activities:[],
       note:r.note||""
     };
@@ -499,7 +531,7 @@ function render(){
   const d = state.view;
   const day = daysBetween(state.start, d) + 1;
   const e = entry(d);
-  const total = sum(e.sessions);
+  const total = mins(e);
 
   $("#dayNum").textContent = day > 0 ? day : "–";
   $("#dateLbl").textContent = fmtDate(d);
@@ -526,9 +558,30 @@ function render(){
     strip.appendChild(s);
   }
 
-  $("#sessLine").innerHTML = e.sessions.length
-    ? "Seancat: <b>"+e.sessions.join(" + ")+"</b> &nbsp;·&nbsp; "+e.sessions.length+" nga 3–5"
-    : "Ende asnjë seancë sot.";
+  const dr = draftOf(d);
+  $("#pendingVal").textContent = dr;
+  $("#commitBtn").disabled = dr === 0;
+  $("#commitBtn").textContent = dr === 0 ? "Regjistro seancën" : "Regjistro seancën ("+dr+" min)";
+
+  const sl = $("#sessList"); sl.innerHTML="";
+  if(!e.sessions.length){
+    const p=document.createElement("p"); p.className="sempty";
+    p.textContent = "Asnjë seancë e regjistruar për këtë ditë.";
+    sl.appendChild(p);
+  } else {
+    e.sessions.forEach((sn,i)=>{
+      const row=document.createElement("div"); row.className="srow";
+      const t=document.createElement("span"); t.className="stime"; t.textContent=sn.t||"—";
+      const m=document.createElement("span"); m.className="smin"; m.innerHTML="<b>"+sn.m+"</b> min";
+      const x=document.createElement("button"); x.className="sdel"; x.textContent="×";
+      x.setAttribute("aria-label","Fshi seancën e orës "+(sn.t||""));
+      x.onclick=()=>{ e.sessions.splice(i,1); queue(d); };
+      row.append(t,m,x); sl.appendChild(row);
+    });
+    const tot=document.createElement("p"); tot.className="sempty";
+    tot.textContent = e.sessions.length+" seanca nga 3–5 të rekomanduara";
+    sl.appendChild(tot);
+  }
 
   const chips=$("#chips"); chips.innerHTML="";
   ACTIVITIES.filter(a=>day>=a.from).forEach(a=>{
@@ -562,7 +615,7 @@ function renderHistory(curDay){
   const maxT = Math.max(...days.map(d=>target(Math.max(daysBetween(state.start,d)+1,1)).max), 10);
   days.forEach(d=>{
     const dn = daysBetween(state.start,d)+1;
-    const tot = state.logs[d] ? sum(state.logs[d].sessions) : 0;
+    const tot = state.logs[d] ? mins(state.logs[d]) : 0;
     const tg = target(Math.max(dn,1));
     const col=document.createElement("div"); col.className="hcol";
     const bar=document.createElement("div");
@@ -575,20 +628,33 @@ function renderHistory(curDay){
   });
 
   const last7=[]; for(let i=6;i>=0;i--) last7.push(addDays(state.view,-i));
-  const tots = last7.map(d=> state.logs[d] ? sum(state.logs[d].sessions) : 0);
+  const tots = last7.map(d=> state.logs[d] ? mins(state.logs[d]) : 0);
   $("#stWeek").textContent = sum(tots);
   $("#stAvg").textContent = Math.round(sum(tots)/7);
 
   let streak=0, cur=state.view;
-  while(state.logs[cur] && sum(state.logs[cur].sessions)>0){ streak++; cur=addDays(cur,-1); }
+  while(state.logs[cur] && mins(state.logs[cur])>0){ streak++; cur=addDays(cur,-1); }
   $("#stStreak").textContent = streak;
 }
 
 /* ---------- Ngjarjet ---------- */
 document.querySelectorAll("[data-add]").forEach(b=>{
-  b.onclick=()=>{ entry(state.view).sessions.push(Number(b.dataset.add)); queue(state.view); };
+  b.onclick=()=>{
+    state.draft[state.view] = draftOf(state.view) + Number(b.dataset.add);
+    saveLocal(); render();
+  };
 });
-$("#undoBtn").onclick=()=>{ const e=entry(state.view); if(e.sessions.length){ e.sessions.pop(); queue(state.view);} };
+$("#minusBtn").onclick=()=>{
+  state.draft[state.view] = Math.max(0, draftOf(state.view) - 1);
+  saveLocal(); render();
+};
+$("#commitBtn").onclick=()=>{
+  const d=state.view, m=draftOf(d);
+  if(!m) return;
+  entry(d).sessions.push({m:m, t: d===todayISO() ? nowHM() : null});
+  state.draft[d]=0;
+  queue(d);
+};
 $("#prevDay").onclick=()=>{ state.view=addDays(state.view,-1); render(); };
 $("#nextDay").onclick=()=>{ if(state.view<todayISO()){ state.view=addDays(state.view,1); render(); } };
 let noteTimer=null;
