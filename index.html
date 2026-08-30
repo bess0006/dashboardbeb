@@ -261,6 +261,12 @@ input[type=date],input[type=text]{
   </div>
 
   <div class="card">
+    <h2>Detyrat e ditës <span class="tcount" id="taskCount">0/0</span></h2>
+    <p class="sub" style="margin:-6px 0 12px">Klikoje secilën kur ta kryesh. Detyrat me minuta shtohen vetë te totali.</p>
+    <div class="tasks" id="tasks"></div>
+  </div>
+
+  <div class="card">
     <div class="total"><b id="totalMin">0</b><i>minuta tummy time</i></div>
     <div class="targetline">
       <span id="targetTxt">Synimi: —</span>
@@ -290,12 +296,6 @@ input[type=date],input[type=text]{
   <div class="card skipnote hidden" id="skipCard">
     <p>Kjo ditë është shënuar si e kaluar. Nuk llogaritet as si e kryer, as si e humbur.</p>
     <button class="skip undo-skip" id="unskipBtn">Hiq shënimin dhe rikthe ditën</button>
-  </div>
-
-  <div class="card">
-    <h2>Detyrat e ditës <span class="tcount" id="taskCount">0/0</span></h2>
-    <p class="sub" style="margin:-6px 0 12px">Klikoje secilën kur ta kryesh. Detyrat me minuta shtohen vetë te totali.</p>
-    <div class="tasks" id="tasks"></div>
   </div>
 
   <div class="card">
