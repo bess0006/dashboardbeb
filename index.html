@@ -232,16 +232,35 @@ input[type=date],input[type=text]{
 <!-- ============ HYRJA ============ -->
 <div class="wrap hidden" id="login">
   <p class="eyebrow">Ditari i stërvitjes</p>
-  <h1>Hyr në llogari</h1>
-  <p class="sub">Të dhënat ndahen mes llogarive të familjes.</p>
+  <h1 id="authTitle">Hyr në llogari</h1>
+  <p class="sub" id="authSub">Të dhënat ndahen mes prindërve të së njëjtës familje.</p>
   <div class="card" style="margin-top:18px">
     <label class="eyebrow" for="email">Email</label>
     <input type="email" id="email" autocomplete="username" inputmode="email" placeholder="emri@shembull.com">
     <label class="eyebrow" for="pass" style="display:block;margin-top:14px">Fjalëkalimi</label>
     <input type="password" id="pass" autocomplete="current-password" placeholder="••••••••">
+    <div id="codeWrap" class="hidden">
+      <label class="eyebrow" for="code" style="display:block;margin-top:14px">Kodi</label>
+      <input type="text" id="code" autocomplete="off" placeholder="kodi i ftesës ose i familjes">
+      <p class="hint">Kod ftese hap një ditar të ri. Kod familjeje të bashkon me partnerin.</p>
+    </div>
     <div class="row"><button class="addbtn primary" id="loginBtn" style="flex:1 1 100%">Hyr</button></div>
     <p class="err hidden" id="loginErr"></p>
-    <p class="hint">Llogaritë krijohen nga paneli i Supabase. Nëse ke harruar fjalëkalimin, ndryshohet po andej.</p>
+    <button class="skip" id="authSwitch">Nuk ke llogari? Krijo një</button>
+  </div>
+</div>
+
+<!-- ============ BASHKIMI ME FAMILJEN ============ -->
+<div class="wrap hidden" id="join">
+  <p class="eyebrow">Hapi i fundit</p>
+  <h1>Vendos kodin</h1>
+  <p class="sub">Llogaria u krijua, por nuk është lidhur ende me një ditar.</p>
+  <div class="card" style="margin-top:18px">
+    <label class="eyebrow" for="joinCode">Kodi</label>
+    <input type="text" id="joinCode" autocomplete="off" placeholder="kodi i ftesës ose i familjes">
+    <div class="row"><button class="addbtn primary" id="joinBtn" style="flex:1 1 100%">Vazhdo</button></div>
+    <p class="err hidden" id="joinErr"></p>
+    <button class="skip" id="joinLogout">Dil nga llogaria</button>
   </div>
 </div>
 
@@ -361,6 +380,9 @@ input[type=date],input[type=text]{
       </div>
       <input type="text" id="nameInput" placeholder="ose shkruaj emrin" autocomplete="off">
       <p class="hint">Ky emër shfaqet te detyrat që plotëson ti.</p>
+      <p class="eyebrow" style="margin-top:18px">Kodi i familjes</p>
+      <p class="who" id="famCode">—</p>
+      <p class="hint">Jepja partnerit që të shohë të njëjtat të dhëna.</p>
       <p class="eyebrow" style="margin-top:18px">Llogaria</p>
       <p class="who" id="who">—</p>
       <button class="logout" id="logoutBtn">Dil nga llogaria</button>
@@ -384,7 +406,7 @@ const BASE = SUPABASE_URL.replace(/\/+$/,"").replace(/\/rest\/v1$/,"");
 const REST = SUPABASE_URL ? BASE + "/rest/v1" : null;
 const AUTH = SUPABASE_URL ? BASE + "/auth/v1" : null;
 const ONLINE_MODE = Boolean(SUPABASE_URL && SUPABASE_KEY);
-const SYNC = () => ONLINE_MODE && !!session;   // sinkronizohet vetëm kur ka sesion
+const SYNC = () => ONLINE_MODE && !!session && !!state.familyId;
 
 /* ---------- Plani: synimet ditore ---------- */
 function target(day){
@@ -537,7 +559,7 @@ const sum = a => a.reduce((x,y)=>x+y,0);
 
 /* ---------- Gjendja ---------- */
 const LS = "ditari-bebe-v1";
-let state = { start:null, birth:null, names:{}, view:todayISO(), logs:{}, pending:{}, draft:{} };
+let state = { familyId:null, joinCode:null, start:null, birth:null, names:{}, view:todayISO(), logs:{}, pending:{}, draft:{} };
 
 function loadLocal(){
   try{
@@ -636,6 +658,17 @@ async function signIn(email, password){
   if(!r.ok) throw new Error(authMsg(j));
   saveSession(sessionFrom(j, email));
 }
+async function signUp(email, password){
+  const r = await fetch(AUTH + "/signup", {
+    method:"POST",
+    headers:{"apikey":SUPABASE_KEY, "Content-Type":"application/json"},
+    body: JSON.stringify({email, password})
+  });
+  const j = await r.json();
+  if(!r.ok) throw new Error(authMsg(j));
+  if(j.access_token) saveSession(sessionFrom(j, email));
+  else await signIn(email, password);      // nëse kërkohet konfirmim, kjo do të dështojë me mesazh të qartë
+}
 async function refreshSession(){
   if(!session || !session.refresh_token) throw new Error("Pa sesion");
   const r = await fetch(AUTH + "/token?grant_type=refresh_token", {
@@ -672,6 +705,15 @@ async function apiGet(path){
   if(!r.ok) throw new Error("GET "+r.status);
   return r.json();
 }
+async function apiRpc(fn, body){
+  const opts = t => ({method:"POST", headers:hdr(t), body:JSON.stringify(body||{})});
+  let t = await token();
+  let r = await fetch(REST+"/rpc/"+fn, opts(t));
+  if(r.status===401){ await refreshSession(); t = await token(); r = await fetch(REST+"/rpc/"+fn, opts(t)); }
+  const j = await r.json().catch(()=>null);
+  if(!r.ok) throw new Error((j && (j.message || j.hint)) || ("RPC "+r.status));
+  return j;
+}
 async function apiUpsert(table, body){
   const opts = t => ({
     method:"POST",
@@ -685,15 +727,15 @@ async function apiUpsert(table, body){
 }
 
 async function pullAll(){
-  if(!SYNC()) return;
-  const st = await apiGet("/app_settings?select=key,value");
+  if(!SYNC() || !state.familyId) return;
+  const st = await apiGet("/app_settings?select=key,value&family_id=eq."+state.familyId);
   st.forEach(r=>{
     if(r.key==="start_date") state.start = r.value;
     if(r.key==="birth_date") state.birth = r.value;
     if(r.key.startsWith("name:")) state.names[r.key.slice(5)] = r.value;
   });
   const from = state.start ? state.start : addDays(todayISO(),-30);
-  const rows = await apiGet("/daily_log?select=*&log_date=gte."+from+"&order=log_date.asc");
+  const rows = await apiGet("/daily_log?select=*&family_id=eq."+state.familyId+"&log_date=gte."+from+"&order=log_date.asc");
   rows.forEach(r=>{
     if(state.pending[r.log_date]) return;      // ndryshimet e paruajtura kanë përparësi
     state.logs[r.log_date] = {
@@ -715,8 +757,8 @@ async function flush(){
   status("Duke ruajtur…","warn");
   const rows = dates.map(d=>{
     const e = entry(d);
-    return {log_date:d, sessions:e.sessions, activities:e.activities, note:e.note,
-            skipped:!!e.skipped, updated_at:new Date().toISOString()};
+    return {family_id:state.familyId, log_date:d, sessions:e.sessions, activities:e.activities,
+            note:e.note, skipped:!!e.skipped, updated_at:new Date().toISOString()};
   });
   try{
     await apiUpsert("daily_log", rows);
@@ -869,6 +911,7 @@ function render(){
   $("#birthInput2").value = state.birth || "";
   if(document.activeElement !== $("#nameInput")) $("#nameInput").value = me();
   $("#who").textContent = session ? session.email : "—";
+  $("#famCode").textContent = state.joinCode || "—";
   $("#cfgHint").textContent = SYNC()
     ? "Të dhënat ndahen mes telefonave përmes Supabase."
     : "Pa lidhje — të dhënat ruhen përkohësisht në këtë telefon.";
@@ -961,7 +1004,7 @@ async function setMyName(v){
   if(!session || !v) return;
   state.names[session.email]=v; saveLocal();
   if(SYNC()){
-    try{ await apiUpsert("app_settings",[{key:"name:"+session.email, value:v}]); status("U ruajt si "+v,"ok"); }
+    try{ await apiUpsert("app_settings",[{family_id:state.familyId, key:"name:"+session.email, value:v}]); status("U ruajt si "+v,"ok"); }
     catch(err){ status("U ruajt vetëm lokalisht","warn"); }
   }
   render();
@@ -969,7 +1012,7 @@ async function setMyName(v){
 async function setBirth(v){
   state.birth=v; saveLocal();
   if(SYNC()){
-    try{ await apiUpsert("app_settings",[{key:"birth_date", value:v}]); status("Ditëlindja u ruajt","ok"); }
+    try{ await apiUpsert("app_settings",[{family_id:state.familyId, key:"birth_date", value:v}]); status("Ditëlindja u ruajt","ok"); }
     catch(err){ status("U ruajt vetëm lokalisht","warn"); }
   }
   render();
@@ -977,7 +1020,7 @@ async function setBirth(v){
 async function setStart(v){
   state.start=v; saveLocal();
   if(SYNC()){
-    try{ await apiUpsert("app_settings",[{key:"start_date", value:v}]); status("Data u ruajt","ok"); }
+    try{ await apiUpsert("app_settings",[{family_id:state.familyId, key:"start_date", value:v}]); status("Data u ruajt","ok"); }
     catch(err){ status("Data u ruajt vetëm lokalisht","warn"); }
   }
   render();
@@ -994,43 +1037,102 @@ function boot2(){
   status(SYNC() ? "I sinkronizuar" : "Ruajtur në këtë telefon");
 }
 
+let authMode = "in";        // "in" = hyrje, "up" = regjistrim
+
+function showScreen(id){
+  ["login","join","setup","app"].forEach(k=>$("#"+k).classList.toggle("hidden", k!==id));
+}
 function showLogin(msg){
-  $("#login").classList.remove("hidden");
-  $("#setup").classList.add("hidden");
-  $("#app").classList.add("hidden");
+  showScreen("login");
   $("#status").textContent = "Nuk je i identifikuar";
   $("#status").className = "status";
   if(msg){ $("#loginErr").textContent=msg; $("#loginErr").classList.remove("hidden"); }
 }
+function setAuthMode(m){
+  authMode = m;
+  const up = m==="up";
+  $("#authTitle").textContent = up ? "Krijo llogari" : "Hyr në llogari";
+  $("#authSub").textContent   = up ? "Të duhet një kod ftese ose kodi i familjes."
+                                   : "Të dhënat ndahen mes prindërve të së njëjtës familje.";
+  $("#codeWrap").classList.toggle("hidden", !up);
+  $("#loginBtn").textContent  = up ? "Krijo llogarinë" : "Hyr";
+  $("#authSwitch").textContent = up ? "Ke llogari? Hyr" : "Nuk ke llogari? Krijo një";
+  $("#pass").setAttribute("autocomplete", up ? "new-password" : "current-password");
+  $("#loginErr").classList.add("hidden");
+}
 
-$("#loginBtn").onclick = doLogin;
-$("#pass").addEventListener("keydown", e=>{ if(e.key==="Enter") doLogin(); });
+$("#authSwitch").onclick = ()=> setAuthMode(authMode==="in" ? "up" : "in");
+$("#loginBtn").onclick = doAuth;
+$("#pass").addEventListener("keydown", e=>{ if(e.key==="Enter") doAuth(); });
+$("#code").addEventListener("keydown", e=>{ if(e.key==="Enter") doAuth(); });
+$("#joinBtn").onclick = doJoin;
+$("#joinCode").addEventListener("keydown", e=>{ if(e.key==="Enter") doJoin(); });
+$("#joinLogout").onclick = signOut;
 $("#logoutBtn").onclick = ()=>{ if(confirm("Të dalësh nga llogaria në këtë telefon?")) signOut(); };
 
-async function doLogin(){
-  const email=$("#email").value.trim(), pw=$("#pass").value;
+async function doAuth(){
+  const email=$("#email").value.trim(), pw=$("#pass").value, code=$("#code").value.trim();
   $("#loginErr").classList.add("hidden");
-  if(!email || !pw){ $("#loginErr").textContent="Plotëso emailin dhe fjalëkalimin."; $("#loginErr").classList.remove("hidden"); return; }
-  $("#loginBtn").disabled=true; $("#loginBtn").textContent="Duke hyrë…";
+  if(!email || !pw){ return authErr("Plotëso emailin dhe fjalëkalimin."); }
+  if(authMode==="up" && !code){ return authErr("Kodi është i detyrueshëm."); }
+  $("#loginBtn").disabled=true;
+  const label=$("#loginBtn").textContent;
+  $("#loginBtn").textContent="Një moment…";
   try{
-    await signIn(email, pw);
+    if(authMode==="up"){
+      await signUp(email, pw);
+      await apiRpc("join_family", {p_code: code});
+    }else{
+      await signIn(email, pw);
+    }
     $("#pass").value="";
     await afterAuth();
+  }catch(err){ authErr(err.message); }
+  finally{ $("#loginBtn").disabled=false; $("#loginBtn").textContent=label; }
+}
+function authErr(m){ $("#loginErr").textContent=m; $("#loginErr").classList.remove("hidden"); }
+
+async function doJoin(){
+  const code=$("#joinCode").value.trim();
+  $("#joinErr").classList.add("hidden");
+  if(!code){ $("#joinErr").textContent="Shkruaj kodin."; $("#joinErr").classList.remove("hidden"); return; }
+  $("#joinBtn").disabled=true;
+  try{
+    await apiRpc("join_family", {p_code: code});
+    await afterAuth();
   }catch(err){
-    $("#loginErr").textContent=err.message; $("#loginErr").classList.remove("hidden");
-  }finally{
-    $("#loginBtn").disabled=false; $("#loginBtn").textContent="Hyr";
-  }
+    $("#joinErr").textContent=err.message;
+    $("#joinErr").classList.remove("hidden");
+  }finally{ $("#joinBtn").disabled=false; }
+}
+
+async function loadFamily(){
+  const f = await apiGet("/families?select=id,join_code");
+  if(!f.length) return false;
+  state.familyId = f[0].id;
+  state.joinCode = f[0].join_code;
+  return true;
+}
+
+function boot2(){
+  showScreen("app");
+  state.view=todayISO();
+  render();
+  status(SYNC() ? "I sinkronizuar" : "Ruajtur në këtë telefon");
 }
 
 async function afterAuth(){
+  try{
+    if(!await loadFamily()){ showScreen("join"); $("#status").textContent="Pa ditar"; return; }
+  }catch(err){
+    status("Pa lidhje me serverin — po punohet lokalisht","warn");
+  }
   try{ await pullAll(); }
   catch(err){ status("Pa lidhje me serverin — po punohet lokalisht","warn"); }
   if(!state.start){
-    $("#login").classList.add("hidden");
-    $("#app").classList.add("hidden");
-    $("#setup").classList.remove("hidden");
+    showScreen("setup");
     $("#startInput").value = todayISO();
+    $("#birthInput").value = todayISO();
     $("#status").textContent = "Lidhur me serverin";
     return;
   }
@@ -1043,13 +1145,14 @@ async function boot(){
   loadSession();
   $("#startInput").value = todayISO();
   $("#birthInput").value = todayISO();
-  if(!ONLINE_MODE){                              // pa konfigurim: modalitet lokal
+  setAuthMode("in");
+  if(!ONLINE_MODE){
     if(state.start){ boot2(); }
-    else { $("#setup").classList.remove("hidden"); $("#status").textContent="Modaliteti lokal"; }
+    else { showScreen("setup"); $("#status").textContent="Modaliteti lokal"; }
     return;
   }
   if(!session){ showLogin(); return; }
-  try{ await token(); }                          // rifresko nëse ka skaduar
+  try{ await token(); }
   catch(err){
     if(navigator.onLine){ showLogin("Sesioni skadoi. Hyr sërish."); return; }
   }
