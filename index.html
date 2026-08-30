@@ -127,6 +127,10 @@ button:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
 .task.on .box{background:var(--green);border-color:var(--green);color:#16281A}
 .task.on .tlabel{color:#B9B2C6}
 .tlabel{flex:1}
+.tby{display:block;font-family:"Space Grotesk",monospace;font-size:11px;
+  letter-spacing:.08em;color:var(--green);margin-top:3px;text-transform:uppercase}
+.taskwho{font-family:"Space Grotesk",monospace;font-size:11.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--violet);margin:0 0 12px}
 .age{font-family:"Space Grotesk",monospace;font-size:12px;color:var(--violet);margin:4px 0 0;letter-spacing:.04em}
 .skip{width:100%;margin-top:14px;font-size:13.5px;color:var(--muted);background:transparent;border-style:dashed}
 .undo-skip{color:#A9DFAC;border-color:rgba(123,196,127,.45);border-style:solid;background:rgba(123,196,127,.10)}
@@ -269,7 +273,8 @@ input[type=date],input[type=text]{
 
   <div class="card">
     <h2>Detyrat e ditës <span class="tcount" id="taskCount">0/0</span></h2>
-    <p class="sub" style="margin:-6px 0 12px">Klikoje secilën kur ta kryesh. Detyrat me minuta shtohen vetë te totali.</p>
+    <p class="sub" style="margin:-6px 0 4px">Klikoje secilën kur ta kryesh. Detyrat me minuta shtohen vetë te totali.</p>
+    <p class="taskwho hidden" id="taskWho"></p>
     <div class="tasks" id="tasks"></div>
   </div>
 
@@ -332,6 +337,13 @@ input[type=date],input[type=text]{
       <label class="eyebrow" for="startInput2" style="display:block;margin-top:14px">Data e ditës 1</label>
       <input type="date" id="startInput2">
       <p class="hint" id="cfgHint">—</p>
+      <p class="eyebrow" style="margin-top:18px">Unë jam</p>
+      <div class="row" style="margin-top:8px">
+        <button class="addbtn" data-name="Mami">Mami</button>
+        <button class="addbtn" data-name="Babi">Babi</button>
+      </div>
+      <input type="text" id="nameInput" placeholder="ose shkruaj emrin" autocomplete="off">
+      <p class="hint">Ky emër shfaqet te detyrat që plotëson ti.</p>
       <p class="eyebrow" style="margin-top:18px">Llogaria</p>
       <p class="who" id="who">—</p>
       <button class="logout" id="logoutBtn">Dil nga llogaria</button>
@@ -447,17 +459,17 @@ const sum = a => a.reduce((x,y)=>x+y,0);
 
 /* ---------- Gjendja ---------- */
 const LS = "ditari-bebe-v1";
-let state = { start:null, birth:null, view:todayISO(), logs:{}, pending:{}, draft:{} };
+let state = { start:null, birth:null, names:{}, view:todayISO(), logs:{}, pending:{}, draft:{} };
 
 function loadLocal(){
   try{
     const raw = localStorage.getItem(LS);
-    if(raw){ const o=JSON.parse(raw); state.start=o.start||null; state.birth=o.birth||null; state.logs=o.logs||{}; state.pending=o.pending||{}; state.draft=o.draft||{}; }
+    if(raw){ const o=JSON.parse(raw); state.start=o.start||null; state.birth=o.birth||null; state.names=o.names||{}; state.logs=o.logs||{}; state.pending=o.pending||{}; state.draft=o.draft||{}; }
     Object.values(state.logs).forEach(normalize);
   }catch(e){ /* localStorage i bllokuar — vazhdo pa cache */ }
 }
 function saveLocal(){
-  try{ localStorage.setItem(LS, JSON.stringify({start:state.start, birth:state.birth, logs:state.logs, pending:state.pending, draft:state.draft})); }catch(e){}
+  try{ localStorage.setItem(LS, JSON.stringify({start:state.start, birth:state.birth, names:state.names, logs:state.logs, pending:state.pending, draft:state.draft})); }catch(e){}
 }
 function blank(d){ return {log_date:d, sessions:[], activities:[], note:"", skipped:false}; }
 function entry(d){ return state.logs[d] || (state.logs[d]=blank(d)); }
@@ -465,11 +477,20 @@ function entry(d){ return state.logs[d] || (state.logs[d]=blank(d)); }
 function normalize(e){
   if(e && Array.isArray(e.sessions))
     e.sessions = e.sessions.map(x => typeof x === "number" ? {m:x, t:null} : x);
+  // Formati i vjetër i aktiviteteve ishte thjesht një varg id-sh.
+  if(e && Array.isArray(e.activities))
+    e.activities = e.activities.map(x => typeof x === "string" ? {id:x, by:null, t:null} : x);
   return e;
 }
+function actIdx(e, id){ return e.activities.findIndex(a=>a.id===id); }
+function actOf(e, id){ return e.activities.find(a=>a.id===id) || null; }
 function mins(e){ return (e && e.sessions && !e.skipped) ? e.sessions.reduce((a,s)=>a+(s.m||0),0) : 0; }
 function nowHM(){ const d=new Date(); return pad(d.getHours())+":"+pad(d.getMinutes()); }
 function draftOf(d){ return state.draft[d] || 0; }
+function me(){
+  if(!session) return "";
+  return state.names[session.email] || session.email.split("@")[0];
+}
 function ageText(onDate){
   if(!state.birth) return "";
   const n = daysBetween(state.birth, onDate);
@@ -480,13 +501,14 @@ function ageText(onDate){
   return w + (w===1 ? " JAVË" : " JAVË") + (r ? " E " + r + (r===1 ? " DITË" : " DITË") : "");
 }
 function toggleTask(d, tk){
-  const e=entry(d), i=e.activities.indexOf(tk.id);
+  const e=entry(d), i=actIdx(e, tk.id);
   if(i>=0){
     e.activities.splice(i,1);
     if(tk.tummy) e.sessions = e.sessions.filter(s=>s.task!==tk.id);
   }else{
-    e.activities.push(tk.id);
-    if(tk.tummy) e.sessions.push({m:tk.min, t: d===todayISO()?nowHM():null, task:tk.id});
+    const when = d===todayISO() ? nowHM() : null;
+    e.activities.push({id:tk.id, by:me(), t:when});
+    if(tk.tummy) e.sessions.push({m:tk.min, t:when, task:tk.id, by:me()});
   }
   queue(d);
 }
@@ -590,6 +612,7 @@ async function pullAll(){
   st.forEach(r=>{
     if(r.key==="start_date") state.start = r.value;
     if(r.key==="birth_date") state.birth = r.value;
+    if(r.key.startsWith("name:")) state.names[r.key.slice(5)] = r.value;
   });
   const from = state.start ? state.start : addDays(todayISO(),-30);
   const rows = await apiGet("/daily_log?select=*&log_date=gte."+from+"&order=log_date.asc");
@@ -598,7 +621,8 @@ async function pullAll(){
     state.logs[r.log_date] = {
       log_date:r.log_date,
       sessions:Array.isArray(r.sessions)?r.sessions.map(x=>typeof x==="number"?{m:x,t:null}:x):[],
-      activities:Array.isArray(r.activities)?r.activities:[],
+      activities:Array.isArray(r.activities)
+        ? r.activities.map(x=>typeof x==="string"?{id:x,by:null,t:null}:x) : [],
       note:r.note||"",
       skipped: r.skipped === true
     };
@@ -685,7 +709,8 @@ function render(){
   } else {
     e.sessions.forEach((sn,i)=>{
       const row=document.createElement("div"); row.className="srow";
-      const t=document.createElement("span"); t.className="stime"; t.textContent=sn.t||"—";
+      const t=document.createElement("span"); t.className="stime";
+      t.textContent=(sn.t||"—")+(sn.by?" "+sn.by:"");
       const m=document.createElement("span"); m.className="smin"; m.innerHTML="<b>"+sn.m+"</b> min";
       m.title="Kliko për të ndryshuar minutat";
       m.onclick=()=>{
@@ -693,7 +718,7 @@ function render(){
         if(v===null) return;
         const n=parseInt(v,10);
         if(isNaN(n)||n<0) return;
-        if(n===0){ e.sessions.splice(i,1); if(sn.task){ const k=e.activities.indexOf(sn.task); if(k>=0) e.activities.splice(k,1); } }
+        if(n===0){ e.sessions.splice(i,1); if(sn.task){ const k=actIdx(e, sn.task); if(k>=0) e.activities.splice(k,1); } }
         else sn.m=n;
         queue(d);
       };
@@ -701,7 +726,7 @@ function render(){
       x.setAttribute("aria-label","Fshi seancën e orës "+(sn.t||""));
       x.onclick=()=>{
         e.sessions.splice(i,1);
-        if(sn.task){ const k=e.activities.indexOf(sn.task); if(k>=0) e.activities.splice(k,1); }
+        if(sn.task){ const k=actIdx(e, sn.task); if(k>=0) e.activities.splice(k,1); }
         queue(d);
       };
       row.append(t,m,x); sl.appendChild(row);
@@ -717,7 +742,7 @@ function render(){
   SLOTS.forEach(sl=>{
     const group=tasks.filter(x=>x.slot===sl.k);
     if(!group.length) return;
-    const ndone=group.filter(x=>e.activities.includes(x.id)).length;
+    const ndone=group.filter(x=>actIdx(e,x.id)>=0).length;
     done+=ndone;
 
     const h=document.createElement("div"); h.className="slothead";
@@ -727,12 +752,17 @@ function render(){
     h.append(nm,ct); tl.appendChild(h);
 
     group.forEach(tk=>{
-      const on=e.activities.includes(tk.id);
+      const a=actOf(e,tk.id), on=!!a;
       const b=document.createElement("button");
       b.className="task"+(on?" on":"")+(tk.tummy?" tummy":"");
       b.setAttribute("aria-pressed", on);
       const box=document.createElement("span"); box.className="box"; box.textContent="✓";
       const lab=document.createElement("span"); lab.className="tlabel"; lab.textContent=tk.label;
+      if(on && (a.by || a.t)){
+        const by=document.createElement("span"); by.className="tby";
+        by.textContent = [a.by, a.t].filter(Boolean).join(" · ");
+        lab.appendChild(by);
+      }
       const mn=document.createElement("span"); mn.className="tmin";
       mn.textContent = tk.tummy ? tk.min+" min" : (tk.hint||"");
       b.append(box,lab,mn);
@@ -741,12 +771,18 @@ function render(){
     });
   });
   $("#taskCount").textContent = done+"/"+tasks.length;
+  const tally={};
+  e.activities.forEach(a=>{ if(a.by) tally[a.by]=(tally[a.by]||0)+1; });
+  const who=Object.entries(tally).sort((x,y)=>y[1]-x[1]).map(([n,c])=>n+" "+c).join("  ·  ");
+  $("#taskWho").textContent = who;
+  $("#taskWho").classList.toggle("hidden", !who);
 
   if(document.activeElement !== $("#note")) $("#note").value = e.note;
 
   renderHistory(day);
   $("#startInput2").value = state.start;
   $("#birthInput2").value = state.birth || "";
+  if(document.activeElement !== $("#nameInput")) $("#nameInput").value = me();
   $("#who").textContent = session ? session.email : "—";
   $("#cfgHint").textContent = SYNC()
     ? "Të dhënat ndahen mes telefonave përmes Supabase."
@@ -814,6 +850,15 @@ $("#note").oninput=()=>{
 };
 $("#startInput2").onchange=async e=>{ await setStart(e.target.value); };
 $("#birthInput2").onchange=async e=>{ await setBirth(e.target.value); };
+document.querySelectorAll("[data-name]").forEach(b=>{
+  b.onclick=()=>setMyName(b.dataset.name);
+});
+let nameTimer=null;
+$("#nameInput").oninput=e=>{
+  clearTimeout(nameTimer);
+  const v=e.target.value.trim();
+  if(v) nameTimer=setTimeout(()=>setMyName(v), 700);
+};
 
 $("#skipBtn").onclick=()=>{
   const d=state.view, e=entry(d), t=mins(e);
@@ -827,6 +872,15 @@ $("#saveStart").onclick=async()=>{
   if(b) await setBirth(b);
   await setStart(v); boot2();
 };
+async function setMyName(v){
+  if(!session || !v) return;
+  state.names[session.email]=v; saveLocal();
+  if(SYNC()){
+    try{ await apiUpsert("app_settings",[{key:"name:"+session.email, value:v}]); status("U ruajt si "+v,"ok"); }
+    catch(err){ status("U ruajt vetëm lokalisht","warn"); }
+  }
+  render();
+}
 async function setBirth(v){
   state.birth=v; saveLocal();
   if(SYNC()){
