@@ -112,6 +112,13 @@ button:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
 .smin{cursor:pointer;border-bottom:1px dotted #4A4260}
 .tcount{font-family:"Space Grotesk",monospace;font-size:13px;color:var(--muted);font-weight:500}
 .tasks{display:flex;flex-direction:column;gap:7px}
+.slothead{display:flex;align-items:baseline;justify-content:space-between;
+  margin:14px 0 1px;padding-bottom:6px;border-bottom:1px solid var(--edge)}
+.slothead:first-child{margin-top:0}
+.slotname{font-family:"Newsreader",Georgia,serif;font-size:17px;font-weight:600}
+.slotcount{font-family:"Space Grotesk",monospace;font-size:11px;letter-spacing:.1em;color:var(--muted)}
+.slothead.full .slotname{color:var(--green)}
+.slothead.full .slotcount{color:var(--green)}
 .task{display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:12px;
   background:var(--card-2);border:1px solid var(--edge);border-radius:11px;font-size:14.5px;line-height:1.35}
 .task .box{flex:0 0 21px;height:21px;border:1.5px solid #4A4260;border-radius:6px;
@@ -395,22 +402,31 @@ function places(day){
   return ["në dysheme","mbi gjoksin e prindit","mbi prehër"];
 }
 function tasksFor(day){
-  const t=[], pl=places(day);
-  tummyChunks(day).forEach((m,i)=>
-    t.push({id:"tt"+(i+1), label:"Tummy time "+pl[i%pl.length], min:m, tummy:true}));
-  t.push({id:"skin",  label:"Kontakt lëkurë më lëkurë",                      hint:"5–10 min"});
-  t.push({id:"talk",  label:"Fol ballë për ballë, 20–30 cm larg",            hint: day<=14?"2–3 min":"3–5 min"});
-  t.push({id:"free",  label:"Lëvizje të lira në shpinë",                     hint: day<=14?"3–5 min":"5 min"});
-  if(day<=7)   t.push({id:"touch", label:"Prekje e butë e duarve dhe këmbëve", hint:"1–2 min"});
-  if(day>=3)   t.push({id:"side",  label:"Side-lying, një anë e pastaj tjetra", hint: day<=14?"1 min/anë":"2 min/anë"});
-  if(day>=15)  t.push({id:"toy",   label:"Lodër me kontrast të lartë",        hint:"3–5 min"});
-  if(day>=22)  t.push({id:"track", label:"Ndjekje me sy — lëvize objektin ngadalë", hint:"3–5 min"});
-  if(day>=43)  t.push({id:"lookt", label:"“Shiko lodrën” — lëre ta ngrejë kokën vetë", hint:"mos e ndihmo"});
-  if(day>=57)  t.push({id:"voice", label:"Zëri nga anash — fol nga e majta, pastaj nga e djathta", hint:"2–3 min"});
-  if(day>=71)  t.push({id:"head",  label:"Kontrolli i kokës — prit ta ngrejë e ta kthejë", hint:"gjatë tummy time"});
-  t.push({id:"song", label:"Këngë ose bisedë e qetë", hint: day<=28?"3–5 min":"5–10 min"});
+  const t=[], pl=places(day), ch=tummyChunks(day);
+  // 2 seanca -> mëngjes+pasdite (si java 1 e planit); 3 -> nga një për seancë; 4 -> shtesa në mëngjes
+  const map = {2:["m","p"], 3:["m","d","p"], 4:["m","d","p","m"]}[ch.length] || ["m","d","p"];
+  ch.forEach((m,i)=>{
+    const pi = (i + Math.floor(i/pl.length)) % pl.length;   // shmang përsëritjen e të njëjtit vend
+    t.push({id:"tt"+(i+1), slot:map[i]||"d", label:"Tummy time "+pl[pi], min:m, tummy:true});
+  });
+  t.push({id:"skin", slot:"m", label:"Kontakt lëkurë më lëkurë",           hint:"5–10 min"});
+  t.push({id:"talk", slot:"m", label:"Fol ballë për ballë, 20–30 cm larg", hint: day<=14?"2–3 min":"3–5 min"});
+  t.push({id:"free", slot:"d", label:"Lëvizje të lira në shpinë",          hint: day<=14?"3–5 min":"5 min"});
+  if(day<=7)  t.push({id:"touch", slot:"d", label:"Prekje e butë e duarve dhe këmbëve", hint:"1–2 min"});
+  if(day>=3)  t.push({id:"side",  slot:"p", label:"Side-lying, një anë e pastaj tjetra", hint: day<=14?"1 min/anë":"2 min/anë"});
+  if(day>=15) t.push({id:"toy",   slot:"d", label:"Lodër me kontrast të lartë",   hint:"3–5 min"});
+  if(day>=22) t.push({id:"track", slot:"d", label:"Ndjekje me sy — lëvize objektin ngadalë", hint:"3–5 min"});
+  if(day>=43) t.push({id:"lookt", slot:"d", label:"“Shiko lodrën” — lëre ta ngrejë kokën vetë", hint:"mos e ndihmo"});
+  if(day>=57) t.push({id:"voice", slot:"p", label:"Zëri nga anash — fol nga e majta, pastaj nga e djathta", hint:"2–3 min"});
+  if(day>=71) t.push({id:"head",  slot:"m", label:"Kontrolli i kokës — prit ta ngrejë e ta kthejë", hint:"gjatë tummy time"});
+  t.push({id:"song", slot:"p", label:"Këngë ose bisedë e qetë", hint: day<=28?"3–5 min":"5–10 min"});
   return t;
 }
+const SLOTS = [
+  {k:"m", name:"Mëngjes"},
+  {k:"d", name:"Mesditë"},
+  {k:"p", name:"Pasdite"}
+];
 
 /* ---------- Ndihmës ---------- */
 const $ = s => document.querySelector(s);
@@ -698,19 +714,31 @@ function render(){
   const tl=$("#tasks"); tl.innerHTML="";
   const tasks=tasksFor(Math.max(day,1));
   let done=0;
-  tasks.forEach(tk=>{
-    const on=e.activities.includes(tk.id);
-    if(on) done++;
-    const b=document.createElement("button");
-    b.className="task"+(on?" on":"")+(tk.tummy?" tummy":"");
-    b.setAttribute("aria-pressed", on);
-    const box=document.createElement("span"); box.className="box"; box.textContent="✓";
-    const lab=document.createElement("span"); lab.className="tlabel"; lab.textContent=tk.label;
-    const mn=document.createElement("span"); mn.className="tmin";
-    mn.textContent = tk.tummy ? tk.min+" min" : (tk.hint||"");
-    b.append(box,lab,mn);
-    b.onclick=()=>toggleTask(d,tk);
-    tl.appendChild(b);
+  SLOTS.forEach(sl=>{
+    const group=tasks.filter(x=>x.slot===sl.k);
+    if(!group.length) return;
+    const ndone=group.filter(x=>e.activities.includes(x.id)).length;
+    done+=ndone;
+
+    const h=document.createElement("div"); h.className="slothead";
+    const nm=document.createElement("span"); nm.className="slotname"; nm.textContent=sl.name;
+    const ct=document.createElement("span"); ct.className="slotcount"; ct.textContent=ndone+"/"+group.length;
+    if(ndone===group.length) h.classList.add("full");
+    h.append(nm,ct); tl.appendChild(h);
+
+    group.forEach(tk=>{
+      const on=e.activities.includes(tk.id);
+      const b=document.createElement("button");
+      b.className="task"+(on?" on":"")+(tk.tummy?" tummy":"");
+      b.setAttribute("aria-pressed", on);
+      const box=document.createElement("span"); box.className="box"; box.textContent="✓";
+      const lab=document.createElement("span"); lab.className="tlabel"; lab.textContent=tk.label;
+      const mn=document.createElement("span"); mn.className="tmin";
+      mn.textContent = tk.tummy ? tk.min+" min" : (tk.hint||"");
+      b.append(box,lab,mn);
+      b.onclick=()=>toggleTask(d,tk);
+      tl.appendChild(b);
+    });
   });
   $("#taskCount").textContent = done+"/"+tasks.length;
 
