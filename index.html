@@ -141,6 +141,21 @@ button:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
 .tmin{flex:0 0 auto;font-family:"Space Grotesk",monospace;font-size:12.5px;color:var(--muted);white-space:nowrap}
 .task.on .tmin{color:var(--green)}
 .tummy .tmin{color:var(--violet)}
+.task.lang{border-left:3px solid rgba(111,179,224,.55)}
+.task.lang .tmin{color:var(--blue)}
+.task.lang.on{background:rgba(111,179,224,.11);border-color:rgba(111,179,224,.42);border-left-color:var(--blue)}
+.task.lang.on .box{background:var(--blue);border-color:var(--blue);color:#0E1D27}
+.task.lang.on .tmin{color:var(--blue)}
+.task.lang.on .tby{color:var(--blue)}
+.legend{display:flex;gap:14px;margin:0 0 12px;font-family:"Space Grotesk",monospace;
+  font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.lg{display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
+.lg::before{content:"";width:8px;height:8px;border-radius:2px}
+.lg.phys::before{background:var(--violet)}
+.lg.lang::before{background:var(--blue)}
+.techline{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--edge);font-size:14px}
+.techline b{display:block;font-family:"Space Grotesk",monospace;font-size:10px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--blue);margin-bottom:4px;font-weight:500}
 .task.on.tummy .tmin{color:var(--green)}
 .sessions{margin-top:12px;font-size:13px;color:var(--muted);font-family:"Space Grotesk",monospace;min-height:20px}
 .sessions b{color:var(--cream);font-weight:500}
@@ -269,11 +284,13 @@ input[type=date],input[type=text]{
   <div class="card focus">
     <p class="eyebrow">Fokusi i kësaj jave</p>
     <p id="focusTxt">—</p>
+    <p class="techline"><b id="phaseLbl">Gjuha</b><span id="techTxt">—</span></p>
   </div>
 
   <div class="card">
     <h2>Detyrat e ditës <span class="tcount" id="taskCount">0/0</span></h2>
     <p class="sub" style="margin:-6px 0 4px">Klikoje secilën kur ta kryesh. Detyrat me minuta shtohen vetë te totali.</p>
+    <p class="legend"><span class="lg phys" id="lgPhys">Fizike</span><span class="lg lang" id="lgLang">Gjuhësore</span></p>
     <p class="taskwho hidden" id="taskWho"></p>
     <div class="tasks" id="tasks"></div>
   </div>
@@ -432,12 +449,73 @@ function tasksFor(day){
   if(day>=57) t.push({id:"voice", slot:"p", label:"Zëri nga anash — fol nga e majta, pastaj nga e djathta", hint:"2–3 min"});
   if(day>=71) t.push({id:"head",  slot:"m", label:"Kontrolli i kokës — prit ta ngrejë e ta kthejë", hint:"gjatë tummy time"});
   t.push({id:"song", slot:"p", label:"Këngë ose bisedë e qetë", hint: day<=28?"3–5 min":"5–10 min"});
+  langPhase(day).tasks.forEach(x => t.push(Object.assign({lang:true}, x)));
   return t;
+}
+/* ---------- Plani gjuhësor: 5 faza deri në 12 muaj ---------- */
+const LANG_PHASES = [
+  {from:1, to:30, name:"Muaji 0–1",
+   tech:"Përgjigju çdo tingulli sikur të ishte fjalë. Pas çdo fjalie, prit 5–10 sekonda.",
+   tasks:[
+     {id:"L1a", slot:"m", label:"Rrëfe çfarë po bën gjatë ndërrimit të pelenës", hint:"2–3 min"},
+     {id:"L1b", slot:"m", label:"Fytyrë më fytyrë, 20–30 cm, fol ngadalë",       hint:"3 min"},
+     {id:"L1c", slot:"d", label:"Lexo me zë të lartë — çfarëdo teksti",          hint:"3–5 min"},
+     {id:"L1d", slot:"p", label:"Këndo të njëjtën këngë si çdo ditë",            hint:"2–3 min"},
+     {id:"L1e", slot:"x", label:"Përgjigju të qarës me fjalë para se ta marrësh", hint:"sa herë ndodh"}
+   ]},
+  {from:31, to:90, name:"Muaji 1–3",
+   tech:"Imitimi i kthyer: bebi bën “aaa”, ti bën “aaa” me të njëjtin ton, pastaj pret.",
+   tasks:[
+     {id:"L2a", slot:"m", label:"Imito tingujt e tij dhe prit përgjigje",   hint:"3–5 min"},
+     {id:"L2b", slot:"m", label:"Rrëfe veprimet e veshjes dhe larjes",      hint:"3 min"},
+     {id:"L2c", slot:"d", label:"Libër me kontrast bardhë-zi, emërto figurat", hint:"3–5 min"},
+     {id:"L2d", slot:"d", label:"Bisedë me pauza 5–10 sekonda pas çdo fjalie", hint:"5 min"},
+     {id:"L2e", slot:"p", label:"Këngë me lëvizje duarsh",                  hint:"3 min"},
+     {id:"L2f", slot:"e", label:"Lexim i qetë para gjumit",                 hint:"5 min"}
+   ]},
+  {from:91, to:180, name:"Muaji 3–6",
+   tech:"Shto një rrokje: ai thotë “ba”, ti thua “ba-ba”. Gjithmonë një hap para tij.",
+   tasks:[
+     {id:"L3a", slot:"m", label:"Thirre me emër nga anë të ndryshme të dhomës", hint:"2 min"},
+     {id:"L3b", slot:"m", label:"Emërto 5 objekte konkrete duke ia treguar",    hint:"5 min"},
+     {id:"L3c", slot:"d", label:"Libër me figura — një fjalë për faqe",         hint:"5 min"},
+     {id:"L3d", slot:"d", label:"Përsërit belbëzimin e tij dhe shto një rrokje", hint:"3–5 min"},
+     {id:"L3e", slot:"p", label:"Lojë me tone: pëshpëritje, pastaj zë i lartë", hint:"2 min"},
+     {id:"L3f", slot:"p", label:"Këngë me prekje — kokë, bark, këmbë",          hint:"3 min"},
+     {id:"L3g", slot:"e", label:"Ritual leximi, i njëjti çdo natë",             hint:"5–10 min"}
+   ]},
+  {from:181, to:270, name:"Muaji 6–9",
+   tech:"Bëj një pyetje dhe prit 10 sekonda, edhe pse s’përgjigjet dot. Pauza mëson strukturën e bisedës.",
+   tasks:[
+     {id:"L4a", slot:"m", label:"Emërto çdo pjesë të rutinës së mëngjesit", hint:"5 min"},
+     {id:"L4b", slot:"m", label:"Bëj një pyetje dhe prit 10 sekonda",       hint:"3 min"},
+     {id:"L4c", slot:"d", label:"Libër — lëre ta kthejë faqen vetë",        hint:"5–10 min"},
+     {id:"L4d", slot:"d", label:"Lojë “ku është” me objekte të fshehura",   hint:"5 min"},
+     {id:"L4e", slot:"d", label:"Emërto ushqimin gjatë të ngrënit",         hint:"gjatë vaktit"},
+     {id:"L4f", slot:"p", label:"Kukamshehti dhe lojëra me radhë",          hint:"5 min"},
+     {id:"L4g", slot:"e", label:"Ritual leximi me të njëjtin libër",        hint:"10 min"}
+   ]},
+  {from:271, to:9999, name:"Muaji 9–12",
+   tech:"Zgjerimi: ai tregon dhe thotë “da”, ti thua “Po, uji. Do ujë? Ja uji.”",
+   tasks:[
+     {id:"L5a", slot:"x", label:"Emërto atë që tregon me gisht, sa herë e bën", hint:"gjatë ditës"},
+     {id:"L5b", slot:"m", label:"Kërkesa të thjeshta: “ma jep topin”",          hint:"5 min"},
+     {id:"L5c", slot:"m", label:"Zgjedhje mes dy sendeve, emërto të dyja",      hint:"3 min"},
+     {id:"L5d", slot:"d", label:"Libër — pyet “ku është…” dhe prit të tregojë", hint:"10 min"},
+     {id:"L5e", slot:"x", label:"Zgjero çdo tingull në fjalë të plotë",         hint:"gjatë ditës"},
+     {id:"L5f", slot:"p", label:"Këngë me gjeste që i imiton",                  hint:"5 min"},
+     {id:"L5g", slot:"e", label:"Lexim, lëre ta zgjedhë librin vetë",           hint:"10–15 min"}
+   ]}
+];
+function langPhase(day){
+  return LANG_PHASES.find(p=>day>=p.from && day<=p.to) || LANG_PHASES[LANG_PHASES.length-1];
 }
 const SLOTS = [
   {k:"m", name:"Mëngjes"},
   {k:"d", name:"Mesditë"},
-  {k:"p", name:"Pasdite"}
+  {k:"p", name:"Pasdite"},
+  {k:"e", name:"Mbrëmje"},
+  {k:"x", name:"Gjatë ditës"}
 ];
 
 /* ---------- Ndihmës ---------- */
@@ -754,7 +832,7 @@ function render(){
     group.forEach(tk=>{
       const a=actOf(e,tk.id), on=!!a;
       const b=document.createElement("button");
-      b.className="task"+(on?" on":"")+(tk.tummy?" tummy":"");
+      b.className="task"+(on?" on":"")+(tk.tummy?" tummy":"")+(tk.lang?" lang":"");
       b.setAttribute("aria-pressed", on);
       const box=document.createElement("span"); box.className="box"; box.textContent="✓";
       const lab=document.createElement("span"); lab.className="tlabel"; lab.textContent=tk.label;
@@ -771,6 +849,13 @@ function render(){
     });
   });
   $("#taskCount").textContent = done+"/"+tasks.length;
+  const ph=tasks.filter(x=>!x.lang), lg=tasks.filter(x=>x.lang);
+  const dn=a=>a.filter(x=>actIdx(e,x.id)>=0).length;
+  $("#lgPhys").textContent = "Fizike "+dn(ph)+"/"+ph.length;
+  $("#lgLang").textContent = "Gjuhësore "+dn(lg)+"/"+lg.length;
+  const lp=langPhase(Math.max(day,1));
+  $("#phaseLbl").textContent = "Gjuha — "+lp.name;
+  $("#techTxt").textContent = lp.tech;
   const tally={};
   e.activities.forEach(a=>{ if(a.by) tally[a.by]=(tally[a.by]||0)+1; });
   const who=Object.entries(tally).sort((x,y)=>y[1]-x[1]).map(([n,c])=>n+" "+c).join("  ·  ");
