@@ -101,6 +101,28 @@ button:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
 .smin b{font-family:"Space Grotesk",monospace}
 .sdel{flex:0 0 30px;padding:5px 0;font-size:15px;color:var(--muted);background:transparent;border:none}
 .sempty{font-size:13.5px;color:var(--muted)}
+.smin{cursor:pointer;border-bottom:1px dotted #4A4260}
+.tcount{font-family:"Space Grotesk",monospace;font-size:13px;color:var(--muted);font-weight:500}
+.tasks{display:flex;flex-direction:column;gap:7px}
+.task{display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:12px;
+  background:var(--card-2);border:1px solid var(--edge);border-radius:11px;font-size:14.5px;line-height:1.35}
+.task .box{flex:0 0 21px;height:21px;border:1.5px solid #4A4260;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;font-size:12px;color:transparent}
+.task.on{background:rgba(123,196,127,.10);border-color:rgba(123,196,127,.40)}
+.task.on .box{background:var(--green);border-color:var(--green);color:#16281A}
+.task.on .tlabel{color:#B9B2C6}
+.tlabel{flex:1}
+.age{font-family:"Space Grotesk",monospace;font-size:12px;color:var(--violet);margin:4px 0 0;letter-spacing:.04em}
+.skip{width:100%;margin-top:14px;font-size:13.5px;color:var(--muted);background:transparent;border-style:dashed}
+.undo-skip{color:#A9DFAC;border-color:rgba(123,196,127,.45);border-style:solid;background:rgba(123,196,127,.10)}
+.skipnote{border-left:3px solid var(--orange)}
+.skipnote p{margin:0;font-size:14px;color:#C9C2D6}
+.dim{opacity:.32;pointer-events:none}
+.hbar.skipped{background:repeating-linear-gradient(45deg,#3A3150,#3A3150 3px,transparent 3px,transparent 6px)}
+.tmin{flex:0 0 auto;font-family:"Space Grotesk",monospace;font-size:12.5px;color:var(--muted);white-space:nowrap}
+.task.on .tmin{color:var(--green)}
+.tummy .tmin{color:var(--violet)}
+.task.on.tummy .tmin{color:var(--green)}
 .sessions{margin-top:12px;font-size:13px;color:var(--muted);font-family:"Space Grotesk",monospace;min-height:20px}
 .sessions b{color:var(--cream);font-weight:500}
 
@@ -192,11 +214,15 @@ input[type=date],input[type=text]{
 <!-- ============ SETUP (empty state) ============ -->
 <div class="wrap hidden" id="setup">
   <p class="eyebrow">Hapi i parë</p>
-  <h1>Vendos datën e nisjes</h1>
-  <p class="sub">Zgjidh ditën që dole nga materniteti. Kjo bëhet dita 1 e planit dhe ndahet me të dy telefonat.</p>
+  <h1>Dy data</h1>
+  <p class="sub">Ruhen një herë dhe ndahen mes të dy telefonave.</p>
   <div class="card" style="margin-top:18px">
-    <label class="eyebrow" for="startInput">Data e daljes</label>
+    <label class="eyebrow" for="birthInput">Ditëlindja e bebit</label>
+    <input type="date" id="birthInput">
+    <p class="hint">Përdoret për të treguar moshën. Nuk ndikon te plani.</p>
+    <label class="eyebrow" for="startInput" style="display:block;margin-top:16px">Data e daljes nga materniteti</label>
     <input type="date" id="startInput">
+    <p class="hint">Kjo bëhet dita 1 e planit.</p>
     <div class="row"><button class="addbtn primary" id="saveStart" style="flex:1 1 100%">Ruaj dhe fillo</button></div>
     <p class="hint">Mund ta ndryshosh më vonë te “Rregullimet”.</p>
   </div>
@@ -210,6 +236,7 @@ input[type=date],input[type=text]{
       <p class="eyebrow" id="weekLbl">Java 1</p>
       <h1>Ditari i stërvitjes</h1>
       <p class="sub" id="dateLbl">—</p>
+      <p class="age" id="ageLbl"></p>
     </div>
     <div class="daybadge"><b id="dayNum">1</b><span>Dita</span></div>
   </header>
@@ -249,11 +276,18 @@ input[type=date],input[type=text]{
       <button class="commit" id="commitBtn" disabled>Regjistro seancën</button>
     </div>
     <div class="sesslist" id="sessList"></div>
+    <button class="skip" id="skipBtn">Shëno ditën si të kaluar</button>
+  </div>
+
+  <div class="card skipnote hidden" id="skipCard">
+    <p>Kjo ditë është shënuar si e kaluar. Nuk llogaritet as si e kryer, as si e humbur.</p>
+    <button class="skip undo-skip" id="unskipBtn">Hiq shënimin dhe rikthe ditën</button>
   </div>
 
   <div class="card">
-    <h2>Aktivitetet e ditës</h2>
-    <div class="chips" id="chips"></div>
+    <h2>Detyrat e ditës <span class="tcount" id="taskCount">0/0</span></h2>
+    <p class="sub" style="margin:-6px 0 12px">Klikoje secilën kur ta kryesh. Detyrat me minuta shtohen vetë te totali.</p>
+    <div class="tasks" id="tasks"></div>
   </div>
 
   <div class="card">
@@ -278,7 +312,9 @@ input[type=date],input[type=text]{
   <details>
     <summary>Rregullimet</summary>
     <div class="card" style="margin-top:8px">
-      <label class="eyebrow" for="startInput2">Data e ditës 1</label>
+      <label class="eyebrow" for="birthInput2">Ditëlindja e bebit</label>
+      <input type="date" id="birthInput2">
+      <label class="eyebrow" for="startInput2" style="display:block;margin-top:14px">Data e ditës 1</label>
       <input type="date" id="startInput2">
       <p class="hint" id="cfgHint">—</p>
       <p class="eyebrow" style="margin-top:18px">Llogaria</p>
@@ -336,16 +372,37 @@ const FOCUS = {
   12:"Tummy time në forma të ndryshme; side-lying si alternativë kur lodhet.",
   13:"Ditët e fundit të planit. Rutinë e qetë mëngjes/mesditë/pasdite, mbrëmja pa ushtrime."
 };
-const ACTIVITIES = [
-  {id:"kontakt",  label:"Kontakt lëkurë më lëkurë", color:"var(--violet)", from:1},
-  {id:"fytyra",   label:"Fytyra + të folur",        color:"var(--amber)",  from:1},
-  {id:"levizje",  label:"Lëvizje të lira",          color:"var(--blue)",   from:1},
-  {id:"side",     label:"Side-lying (të dy anët)",  color:"var(--orange)", from:3},
-  {id:"kenge",    label:"Këngë",                    color:"var(--violet)", from:1},
-  {id:"lodra",    label:"Lodër me kontrast",        color:"var(--green)",  from:15},
-  {id:"syte",     label:"Ndjekje me sy",            color:"var(--amber)",  from:22},
-  {id:"zeri",     label:"Zë nga anash",             color:"var(--blue)",   from:57}
-];
+/* ---------- Detyrat ditore, të nxjerra nga plani ---------- */
+function splitMinutes(total,n){
+  const base=Math.floor(total/n), rem=total%n;
+  return Array.from({length:n},(_,i)=>base+(i<rem?1:0)).filter(x=>x>0);
+}
+function tummyChunks(day){
+  const n = day<=7 ? 2 : day<=49 ? 3 : 4;
+  return splitMinutes(target(day).min, n);
+}
+function places(day){
+  if(day<=14) return ["mbi gjoksin e prindit"];
+  if(day<=21) return ["mbi gjoksin e prindit","në dysheme"];
+  return ["në dysheme","mbi gjoksin e prindit","mbi prehër"];
+}
+function tasksFor(day){
+  const t=[], pl=places(day);
+  tummyChunks(day).forEach((m,i)=>
+    t.push({id:"tt"+(i+1), label:"Tummy time "+pl[i%pl.length], min:m, tummy:true}));
+  t.push({id:"skin",  label:"Kontakt lëkurë më lëkurë",                      hint:"5–10 min"});
+  t.push({id:"talk",  label:"Fol ballë për ballë, 20–30 cm larg",            hint: day<=14?"2–3 min":"3–5 min"});
+  t.push({id:"free",  label:"Lëvizje të lira në shpinë",                     hint: day<=14?"3–5 min":"5 min"});
+  if(day<=7)   t.push({id:"touch", label:"Prekje e butë e duarve dhe këmbëve", hint:"1–2 min"});
+  if(day>=3)   t.push({id:"side",  label:"Side-lying, një anë e pastaj tjetra", hint: day<=14?"1 min/anë":"2 min/anë"});
+  if(day>=15)  t.push({id:"toy",   label:"Lodër me kontrast të lartë",        hint:"3–5 min"});
+  if(day>=22)  t.push({id:"track", label:"Ndjekje me sy — lëvize objektin ngadalë", hint:"3–5 min"});
+  if(day>=43)  t.push({id:"lookt", label:"“Shiko lodrën” — lëre ta ngrejë kokën vetë", hint:"mos e ndihmo"});
+  if(day>=57)  t.push({id:"voice", label:"Zëri nga anash — fol nga e majta, pastaj nga e djathta", hint:"2–3 min"});
+  if(day>=71)  t.push({id:"head",  label:"Kontrolli i kokës — prit ta ngrejë e ta kthejë", hint:"gjatë tummy time"});
+  t.push({id:"song", label:"Këngë ose bisedë e qetë", hint: day<=28?"3–5 min":"5–10 min"});
+  return t;
+}
 
 /* ---------- Ndihmës ---------- */
 const $ = s => document.querySelector(s);
@@ -366,19 +423,19 @@ const sum = a => a.reduce((x,y)=>x+y,0);
 
 /* ---------- Gjendja ---------- */
 const LS = "ditari-bebe-v1";
-let state = { start:null, view:todayISO(), logs:{}, pending:{}, draft:{} };
+let state = { start:null, birth:null, view:todayISO(), logs:{}, pending:{}, draft:{} };
 
 function loadLocal(){
   try{
     const raw = localStorage.getItem(LS);
-    if(raw){ const o=JSON.parse(raw); state.start=o.start||null; state.logs=o.logs||{}; state.pending=o.pending||{}; state.draft=o.draft||{}; }
+    if(raw){ const o=JSON.parse(raw); state.start=o.start||null; state.birth=o.birth||null; state.logs=o.logs||{}; state.pending=o.pending||{}; state.draft=o.draft||{}; }
     Object.values(state.logs).forEach(normalize);
   }catch(e){ /* localStorage i bllokuar — vazhdo pa cache */ }
 }
 function saveLocal(){
-  try{ localStorage.setItem(LS, JSON.stringify({start:state.start, logs:state.logs, pending:state.pending, draft:state.draft})); }catch(e){}
+  try{ localStorage.setItem(LS, JSON.stringify({start:state.start, birth:state.birth, logs:state.logs, pending:state.pending, draft:state.draft})); }catch(e){}
 }
-function blank(d){ return {log_date:d, sessions:[], activities:[], note:""}; }
+function blank(d){ return {log_date:d, sessions:[], activities:[], note:"", skipped:false}; }
 function entry(d){ return state.logs[d] || (state.logs[d]=blank(d)); }
 // Seancat ruhen si {m:minuta, t:"HH:MM"}. Formati i vjetër ishte thjesht një numër.
 function normalize(e){
@@ -386,9 +443,29 @@ function normalize(e){
     e.sessions = e.sessions.map(x => typeof x === "number" ? {m:x, t:null} : x);
   return e;
 }
-function mins(e){ return e && e.sessions ? e.sessions.reduce((a,s)=>a+(s.m||0),0) : 0; }
+function mins(e){ return (e && e.sessions && !e.skipped) ? e.sessions.reduce((a,s)=>a+(s.m||0),0) : 0; }
 function nowHM(){ const d=new Date(); return pad(d.getHours())+":"+pad(d.getMinutes()); }
 function draftOf(d){ return state.draft[d] || 0; }
+function ageText(onDate){
+  if(!state.birth) return "";
+  const n = daysBetween(state.birth, onDate);
+  if(n < 0) return "";
+  if(n === 0) return "I LINDUR SOT";
+  if(n < 7)  return n + (n===1 ? " DITË" : " DITË");
+  const w = Math.floor(n/7), r = n%7;
+  return w + (w===1 ? " JAVË" : " JAVË") + (r ? " E " + r + (r===1 ? " DITË" : " DITË") : "");
+}
+function toggleTask(d, tk){
+  const e=entry(d), i=e.activities.indexOf(tk.id);
+  if(i>=0){
+    e.activities.splice(i,1);
+    if(tk.tummy) e.sessions = e.sessions.filter(s=>s.task!==tk.id);
+  }else{
+    e.activities.push(tk.id);
+    if(tk.tummy) e.sessions.push({m:tk.min, t: d===todayISO()?nowHM():null, task:tk.id});
+  }
+  queue(d);
+}
 
 /* ---------- Statusi ---------- */
 let statusTimer=null;
@@ -485,8 +562,11 @@ async function apiUpsert(table, body){
 
 async function pullAll(){
   if(!SYNC()) return;
-  const s = await apiGet("/app_settings?select=key,value&key=eq.start_date");
-  if(s.length) state.start = s[0].value;
+  const st = await apiGet("/app_settings?select=key,value");
+  st.forEach(r=>{
+    if(r.key==="start_date") state.start = r.value;
+    if(r.key==="birth_date") state.birth = r.value;
+  });
   const from = state.start ? state.start : addDays(todayISO(),-30);
   const rows = await apiGet("/daily_log?select=*&log_date=gte."+from+"&order=log_date.asc");
   rows.forEach(r=>{
@@ -495,7 +575,8 @@ async function pullAll(){
       log_date:r.log_date,
       sessions:Array.isArray(r.sessions)?r.sessions.map(x=>typeof x==="number"?{m:x,t:null}:x):[],
       activities:Array.isArray(r.activities)?r.activities:[],
-      note:r.note||""
+      note:r.note||"",
+      skipped: r.skipped === true
     };
   });
   saveLocal();
@@ -508,7 +589,8 @@ async function flush(){
   status("Duke ruajtur…","warn");
   const rows = dates.map(d=>{
     const e = entry(d);
-    return {log_date:d, sessions:e.sessions, activities:e.activities, note:e.note, updated_at:new Date().toISOString()};
+    return {log_date:d, sessions:e.sessions, activities:e.activities, note:e.note,
+            skipped:!!e.skipped, updated_at:new Date().toISOString()};
   });
   try{
     await apiUpsert("daily_log", rows);
@@ -535,6 +617,14 @@ function render(){
 
   $("#dayNum").textContent = day > 0 ? day : "–";
   $("#dateLbl").textContent = fmtDate(d);
+  $("#ageLbl").textContent = ageText(d);
+  const skipped = !!e.skipped;
+  $("#skipCard").classList.toggle("hidden", !skipped);
+  $("#skipBtn").classList.toggle("hidden", skipped);
+  ["strip","composer","sessList","tasks"].forEach(k=>{
+    const el = k==="composer" ? document.querySelector(".composer") : $("#"+k);
+    if(el) el.classList.toggle("dim", skipped);
+  });
   $("#navLbl").textContent = d===todayISO() ? "Sot" : (d===addDays(todayISO(),-1) ? "Dje" : "Ditë e mëparshme");
   $("#nextDay").disabled = d >= todayISO();
   $("#nextDay").style.opacity = d >= todayISO() ? .35 : 1;
@@ -544,10 +634,10 @@ function render(){
   $("#focusTxt").textContent = FOCUS[wk] || FOCUS[13];
 
   const t = target(Math.max(day,1));
-  $("#totalMin").textContent = total;
+  $("#totalMin").textContent = skipped ? "—" : total;
   $("#targetTxt").textContent = "Synimi: "+t.min+"–"+(t.plus? "30+" : t.max)+" min";
-  $("#metTxt").textContent = total>=t.min ? "✓ arritur" : "";
-  $("#metTxt").className = total>=t.min ? "ok" : "";
+  $("#metTxt").textContent = skipped ? "ditë e kaluar" : (total>=t.min ? "✓ arritur" : "");
+  $("#metTxt").className = (!skipped && total>=t.min) ? "ok" : "";
   $("#stripMid").textContent = t.min;
   $("#stripMax").textContent = t.plus ? "30+" : t.max;
 
@@ -573,9 +663,23 @@ function render(){
       const row=document.createElement("div"); row.className="srow";
       const t=document.createElement("span"); t.className="stime"; t.textContent=sn.t||"—";
       const m=document.createElement("span"); m.className="smin"; m.innerHTML="<b>"+sn.m+"</b> min";
+      m.title="Kliko për të ndryshuar minutat";
+      m.onclick=()=>{
+        const v=prompt("Minutat e kësaj seance:", sn.m);
+        if(v===null) return;
+        const n=parseInt(v,10);
+        if(isNaN(n)||n<0) return;
+        if(n===0){ e.sessions.splice(i,1); if(sn.task){ const k=e.activities.indexOf(sn.task); if(k>=0) e.activities.splice(k,1); } }
+        else sn.m=n;
+        queue(d);
+      };
       const x=document.createElement("button"); x.className="sdel"; x.textContent="×";
       x.setAttribute("aria-label","Fshi seancën e orës "+(sn.t||""));
-      x.onclick=()=>{ e.sessions.splice(i,1); queue(d); };
+      x.onclick=()=>{
+        e.sessions.splice(i,1);
+        if(sn.task){ const k=e.activities.indexOf(sn.task); if(k>=0) e.activities.splice(k,1); }
+        queue(d);
+      };
       row.append(t,m,x); sl.appendChild(row);
     });
     const tot=document.createElement("p"); tot.className="sempty";
@@ -583,25 +687,30 @@ function render(){
     sl.appendChild(tot);
   }
 
-  const chips=$("#chips"); chips.innerHTML="";
-  ACTIVITIES.filter(a=>day>=a.from).forEach(a=>{
+  const tl=$("#tasks"); tl.innerHTML="";
+  const tasks=tasksFor(Math.max(day,1));
+  let done=0;
+  tasks.forEach(tk=>{
+    const on=e.activities.includes(tk.id);
+    if(on) done++;
     const b=document.createElement("button");
-    b.className="chip"+(e.activities.includes(a.id)?" on":"")+((day-a.from<7 && a.from>1)?" new":"");
-    b.style.setProperty("--c",a.color);
-    b.setAttribute("aria-pressed", e.activities.includes(a.id));
-    b.innerHTML='<span class="dot"></span>'+a.label;
-    b.onclick=()=>{
-      const i=e.activities.indexOf(a.id);
-      i>=0 ? e.activities.splice(i,1) : e.activities.push(a.id);
-      queue(d);
-    };
-    chips.appendChild(b);
+    b.className="task"+(on?" on":"")+(tk.tummy?" tummy":"");
+    b.setAttribute("aria-pressed", on);
+    const box=document.createElement("span"); box.className="box"; box.textContent="✓";
+    const lab=document.createElement("span"); lab.className="tlabel"; lab.textContent=tk.label;
+    const mn=document.createElement("span"); mn.className="tmin";
+    mn.textContent = tk.tummy ? tk.min+" min" : (tk.hint||"");
+    b.append(box,lab,mn);
+    b.onclick=()=>toggleTask(d,tk);
+    tl.appendChild(b);
   });
+  $("#taskCount").textContent = done+"/"+tasks.length;
 
   if(document.activeElement !== $("#note")) $("#note").value = e.note;
 
   renderHistory(day);
   $("#startInput2").value = state.start;
+  $("#birthInput2").value = state.birth || "";
   $("#who").textContent = session ? session.email : "—";
   $("#cfgHint").textContent = SYNC()
     ? "Të dhënat ndahen mes telefonave përmes Supabase."
@@ -619,9 +728,10 @@ function renderHistory(curDay){
     const tg = target(Math.max(dn,1));
     const col=document.createElement("div"); col.className="hcol";
     const bar=document.createElement("div");
-    bar.className="hbar"+(tot===0?" none":(tot>=tg.min?" met":""));
+    const sk = state.logs[d] && state.logs[d].skipped;
+    bar.className="hbar"+(sk?" skipped":(tot===0?" none":(tot>=tg.min?" met":"")));
     bar.style.height = Math.max(2, Math.round((tot/maxT)*56))+"px";
-    bar.title = fmtDate(d)+": "+tot+" min";
+    bar.title = fmtDate(d)+": "+(sk?"e kaluar":tot+" min");
     const lbl=document.createElement("div"); lbl.className="hlbl";
     lbl.textContent = dn>0 && dn<=90 ? dn : "";
     col.appendChild(bar); col.appendChild(lbl); h.appendChild(col);
@@ -629,11 +739,15 @@ function renderHistory(curDay){
 
   const last7=[]; for(let i=6;i>=0;i--) last7.push(addDays(state.view,-i));
   const tots = last7.map(d=> state.logs[d] ? mins(state.logs[d]) : 0);
+  const counted = last7.filter(d=> !(state.logs[d] && state.logs[d].skipped));
   $("#stWeek").textContent = sum(tots);
-  $("#stAvg").textContent = Math.round(sum(tots)/7);
+  $("#stAvg").textContent = counted.length ? Math.round(sum(tots)/counted.length) : 0;
 
   let streak=0, cur=state.view;
-  while(state.logs[cur] && mins(state.logs[cur])>0){ streak++; cur=addDays(cur,-1); }
+  while(state.logs[cur] && (mins(state.logs[cur])>0 || state.logs[cur].skipped)){
+    if(!state.logs[cur].skipped) streak++;
+    cur=addDays(cur,-1);
+  }
   $("#stStreak").textContent = streak;
 }
 
@@ -663,11 +777,28 @@ $("#note").oninput=()=>{
   clearTimeout(noteTimer); noteTimer=setTimeout(()=>queue(state.view),700);
 };
 $("#startInput2").onchange=async e=>{ await setStart(e.target.value); };
+$("#birthInput2").onchange=async e=>{ await setBirth(e.target.value); };
+
+$("#skipBtn").onclick=()=>{
+  const d=state.view, e=entry(d), t=mins(e);
+  if(t>0 && !confirm("Kjo ditë ka "+t+" minuta të regjistruara. Nëse e shënon si të kaluar, ato nuk do të llogariten. Të vazhdohet?")) return;
+  e.skipped=true; queue(d);
+};
+$("#unskipBtn").onclick=()=>{ const d=state.view; entry(d).skipped=false; queue(d); };
 $("#saveStart").onclick=async()=>{
-  const v=$("#startInput").value;
-  if(!v){ status("Zgjidh një datë","err"); return; }
+  const v=$("#startInput").value, b=$("#birthInput").value;
+  if(!v){ status("Zgjidh datën e daljes","err"); return; }
+  if(b) await setBirth(b);
   await setStart(v); boot2();
 };
+async function setBirth(v){
+  state.birth=v; saveLocal();
+  if(SYNC()){
+    try{ await apiUpsert("app_settings",[{key:"birth_date", value:v}]); status("Ditëlindja u ruajt","ok"); }
+    catch(err){ status("U ruajt vetëm lokalisht","warn"); }
+  }
+  render();
+}
 async function setStart(v){
   state.start=v; saveLocal();
   if(SYNC()){
@@ -736,6 +867,7 @@ async function boot(){
   loadLocal();
   loadSession();
   $("#startInput").value = todayISO();
+  $("#birthInput").value = todayISO();
   if(!ONLINE_MODE){                              // pa konfigurim: modalitet lokal
     if(state.start){ boot2(); }
     else { $("#setup").classList.remove("hidden"); $("#status").textContent="Modaliteti lokal"; }
