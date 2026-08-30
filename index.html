@@ -65,22 +65,7 @@ header{display:flex;align-items:flex-start;justify-content:space-between;gap:14p
 .focus p{margin:0;font-size:15px}
 .focus .eyebrow{margin-bottom:6px;color:var(--amber)}
 
-/* ---- hero ---- */
-.total{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
-.total b{font-family:"Space Grotesk",monospace;font-size:56px;font-weight:700;line-height:.9;font-variant-numeric:tabular-nums}
-.total i{font-style:normal;color:var(--muted);font-size:15px}
-.targetline{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:14px}
-.targetline .ok{color:var(--green)}
 
-/* ---- signature: shiriti matës ---- */
-.strip{display:flex;gap:2px;align-items:flex-end;height:34px;margin-bottom:6px}
-.tick{flex:1 1 0;min-width:2px;border-radius:2px;background:#2B2439;height:14px;transition:height .18s ease,background .18s ease}
-.tick.zone-min{height:20px}
-.tick.zone-max{height:26px;background:#312949}
-.tick.on{background:var(--violet);height:26px}
-.tick.on.zone-min{background:var(--green)}
-.tick.on.zone-max{background:var(--green);opacity:.75}
-.striplabels{display:flex;justify-content:space-between;font-family:"Space Grotesk",monospace;font-size:10px;color:var(--muted);letter-spacing:.08em}
 
 /* ---- buttons ---- */
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
@@ -93,23 +78,6 @@ button:active{transform:scale(.96)}
 button:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
 .addbtn{flex:1 1 0;min-width:58px;font-family:"Space Grotesk",monospace;font-weight:700;font-size:17px}
 .addbtn.primary{background:rgba(167,139,250,.16);border-color:rgba(167,139,250,.5);color:#C9B6FF}
-.undo{flex:0 0 52px;color:var(--muted);font-size:18px}
-.composer{margin-top:16px;border:1px dashed #3A3150;border-radius:12px;padding:13px}
-.ctop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
-.clbl{font-size:13.5px;color:var(--muted)}
-.cval{font-family:"Space Grotesk",monospace;font-size:14px;color:var(--muted)}
-.cval b{font-size:24px;font-weight:700;color:var(--cream);font-variant-numeric:tabular-nums}
-.composer .row{margin-top:10px}
-.commit{width:100%;margin-top:10px;background:rgba(123,196,127,.14);border-color:rgba(123,196,127,.45);color:#A9DFAC;font-weight:600}
-.commit:disabled{background:var(--card-2);border-color:var(--edge);color:#5F5875;cursor:default}
-.sesslist{margin-top:14px;display:flex;flex-direction:column;gap:6px}
-.srow{display:flex;align-items:center;gap:10px;background:var(--card-2);border-radius:10px;padding:9px 11px}
-.stime{font-family:"Space Grotesk",monospace;font-size:13px;color:var(--muted);min-width:44px}
-.smin{flex:1;font-size:14.5px}
-.smin b{font-family:"Space Grotesk",monospace}
-.sdel{flex:0 0 30px;padding:5px 0;font-size:15px;color:var(--muted);background:transparent;border:none}
-.sempty{font-size:13.5px;color:var(--muted)}
-.smin{cursor:pointer;border-bottom:1px dotted #4A4260}
 .tcount{font-family:"Space Grotesk",monospace;font-size:13px;color:var(--muted);font-weight:500}
 .tasks{display:flex;flex-direction:column;gap:7px}
 .slothead{display:flex;align-items:baseline;justify-content:space-between;
@@ -132,7 +100,7 @@ button:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
 .taskwho{font-family:"Space Grotesk",monospace;font-size:11.5px;letter-spacing:.1em;
   text-transform:uppercase;color:var(--violet);margin:0 0 12px}
 .age{font-family:"Space Grotesk",monospace;font-size:12px;color:var(--violet);margin:4px 0 0;letter-spacing:.04em}
-.skip{width:100%;margin-top:14px;font-size:13.5px;color:var(--muted);background:transparent;border-style:dashed}
+.skip{width:100%;margin:2px 0 16px;font-size:13.5px;color:var(--muted);background:transparent;border-style:dashed}
 .undo-skip{color:#A9DFAC;border-color:rgba(123,196,127,.45);border-style:solid;background:rgba(123,196,127,.10)}
 .skipnote{border-left:3px solid var(--orange)}
 .skipnote p{margin:0;font-size:14px;color:#C9C2D6}
@@ -157,7 +125,6 @@ button:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
 .techline b{display:block;font-family:"Space Grotesk",monospace;font-size:10px;
   letter-spacing:.16em;text-transform:uppercase;color:var(--blue);margin-bottom:4px;font-weight:500}
 .task.on.tummy .tmin{color:var(--green)}
-.sessions{margin-top:12px;font-size:13px;color:var(--muted);font-family:"Space Grotesk",monospace;min-height:20px}
 .sessions b{color:var(--cream);font-weight:500}
 
 /* ---- chips ---- */
@@ -308,38 +275,13 @@ input[type=date],input[type=text]{
 
   <div class="card">
     <h2>Detyrat e ditës <span class="tcount" id="taskCount">0/0</span></h2>
-    <p class="sub" style="margin:-6px 0 4px">Klikoje secilën kur ta kryesh. Detyrat me minuta shtohen vetë te totali.</p>
+    <p class="sub" style="margin:-6px 0 4px">Klikoje secilën kur ta kryesh.</p>
     <p class="legend"><span class="lg phys" id="lgPhys">Fizike</span><span class="lg lang" id="lgLang">Gjuhësore</span></p>
     <p class="taskwho hidden" id="taskWho"></p>
     <div class="tasks" id="tasks"></div>
   </div>
 
-  <div class="card">
-    <div class="total"><b id="totalMin">0</b><i id="totalLbl">minuta tummy time</i></div>
-    <div class="targetline">
-      <span id="targetTxt">Synimi: —</span>
-      <span id="metTxt"></span>
-    </div>
-    <div class="strip" id="strip" role="img" aria-label="Shiriti i minutave"></div>
-    <div class="striplabels"><span>0</span><span id="stripMid"></span><span id="stripMax"></span></div>
-
-    <div class="composer">
-      <div class="ctop">
-        <span class="clbl">Seanca që po bën tani</span>
-        <span class="cval"><b id="pendingVal">0</b> min</span>
-      </div>
-      <div class="row">
-        <button class="addbtn" data-add="1">+1</button>
-        <button class="addbtn" data-add="2">+2</button>
-        <button class="addbtn primary" data-add="3">+3</button>
-        <button class="addbtn" data-add="5">+5</button>
-        <button class="undo" id="minusBtn" aria-label="Hiq një minutë">−</button>
-      </div>
-      <button class="commit" id="commitBtn" disabled>Regjistro seancën</button>
-    </div>
-    <div class="sesslist" id="sessList"></div>
-    <button class="skip" id="skipBtn">Shëno ditën si të kaluar</button>
-  </div>
+  <button class="skip" id="skipBtn">Shëno ditën si të kaluar</button>
 
   <div class="card skipnote hidden" id="skipCard">
     <p>Kjo ditë është shënuar si e kaluar. Nuk llogaritet as si e kryer, as si e humbur.</p>
@@ -630,17 +572,17 @@ const sum = a => a.reduce((x,y)=>x+y,0);
 
 /* ---------- Gjendja ---------- */
 const LS = "ditari-bebe-v1";
-let state = { familyId:null, joinCode:null, start:null, birth:null, names:{}, view:todayISO(), logs:{}, pending:{}, draft:{} };
+let state = { familyId:null, joinCode:null, start:null, birth:null, names:{}, view:todayISO(), logs:{}, pending:{} };
 
 function loadLocal(){
   try{
     const raw = localStorage.getItem(LS);
-    if(raw){ const o=JSON.parse(raw); state.start=o.start||null; state.birth=o.birth||null; state.names=o.names||{}; state.logs=o.logs||{}; state.pending=o.pending||{}; state.draft=o.draft||{}; }
+    if(raw){ const o=JSON.parse(raw); state.start=o.start||null; state.birth=o.birth||null; state.names=o.names||{}; state.logs=o.logs||{}; state.pending=o.pending||{}; }
     Object.values(state.logs).forEach(normalize);
   }catch(e){ /* localStorage i bllokuar — vazhdo pa cache */ }
 }
 function saveLocal(){
-  try{ localStorage.setItem(LS, JSON.stringify({start:state.start, birth:state.birth, names:state.names, logs:state.logs, pending:state.pending, draft:state.draft})); }catch(e){}
+  try{ localStorage.setItem(LS, JSON.stringify({start:state.start, birth:state.birth, names:state.names, logs:state.logs, pending:state.pending})); }catch(e){}
 }
 function blank(d){ return {log_date:d, sessions:[], activities:[], note:"", skipped:false}; }
 function entry(d){ return state.logs[d] || (state.logs[d]=blank(d)); }
@@ -657,7 +599,6 @@ function actIdx(e, id){ return e.activities.findIndex(a=>a.id===id); }
 function actOf(e, id){ return e.activities.find(a=>a.id===id) || null; }
 function mins(e){ return (e && e.sessions && !e.skipped) ? e.sessions.reduce((a,s)=>a+(s.m||0),0) : 0; }
 function nowHM(){ const d=new Date(); return pad(d.getHours())+":"+pad(d.getMinutes()); }
-function draftOf(d){ return state.draft[d] || 0; }
 function me(){
   if(!session) return "";
   return state.names[session.email] || session.email.split("@")[0];
@@ -852,7 +793,6 @@ function render(){
   const d = state.view;
   const day = daysBetween(state.start, d) + 1;
   const e = entry(d);
-  const total = mins(e);
 
   $("#dayNum").textContent = day > 0 ? day : "–";
   $("#dateLbl").textContent = fmtDate(d);
@@ -860,79 +800,7 @@ function render(){
   const skipped = !!e.skipped;
   $("#skipCard").classList.toggle("hidden", !skipped);
   $("#skipBtn").classList.toggle("hidden", skipped);
-  ["strip","composer","sessList","tasks"].forEach(k=>{
-    const el = k==="composer" ? document.querySelector(".composer") : $("#"+k);
-    if(el) el.classList.toggle("dim", skipped);
-  });
-  $("#navLbl").textContent = d===todayISO() ? "Sot" : (d===addDays(todayISO(),-1) ? "Dje" : "Ditë e mëparshme");
-  $("#nextDay").disabled = d >= todayISO();
-  $("#nextDay").style.opacity = d >= todayISO() ? .35 : 1;
-
-  const wk = weekOf(Math.max(day,1));
-  const pph=physPhase(day);
-  $("#weekLbl").textContent = pph ? pph.name : (day>84 ? "Ditët 85–90" : "Java "+wk);
-  $("#focusTxt").textContent = pph ? pph.focus : (FOCUS[wk] || FOCUS[13]);
-
-  const t = target(Math.max(day,1));
-  $("#totalMin").textContent = skipped ? "—" : total;
-  $("#totalLbl").textContent = "minuta " + (pph ? pph.unit : "tummy time");
-  $("#targetTxt").textContent = "Synimi: "+t.min+"–"+(t.plus? "30+" : t.max)+" min";
-  $("#metTxt").textContent = skipped ? "ditë e kaluar" : (total>=t.min ? "✓ arritur" : "");
-  $("#metTxt").className = (!skipped && total>=t.min) ? "ok" : "";
-  $("#stripMid").textContent = t.min;
-  $("#stripMax").textContent = t.plus ? "30+" : t.max;
-
-  const strip=$("#strip"); strip.innerHTML="";
-  const step = t.max>40 ? 5 : 1;                 // shmang vijëza nën-pikselike
-  const nTicks = Math.ceil(t.max/step);
-  const onTo = Math.floor(total/step);
-  const minTick = Math.ceil(t.min/step);
-  for(let i=1;i<=nTicks;i++){
-    const el=document.createElement("div");
-    el.className="tick"+(i<=minTick?" zone-min":" zone-max")+(i<=onTo?" on":"");
-    strip.appendChild(el);
-  }
-  strip.setAttribute("aria-label", total+" nga "+t.min+" minuta"+(step>1?" (një vijëz = 5 min)":""));
-
-  const dr = draftOf(d);
-  $("#pendingVal").textContent = dr;
-  $("#commitBtn").disabled = dr === 0;
-  $("#commitBtn").textContent = dr === 0 ? "Regjistro seancën" : "Regjistro seancën ("+dr+" min)";
-
-  const sl = $("#sessList"); sl.innerHTML="";
-  if(!e.sessions.length){
-    const p=document.createElement("p"); p.className="sempty";
-    p.textContent = "Asnjë seancë e regjistruar për këtë ditë.";
-    sl.appendChild(p);
-  } else {
-    e.sessions.forEach((sn,i)=>{
-      const row=document.createElement("div"); row.className="srow";
-      const t=document.createElement("span"); t.className="stime";
-      t.textContent=(sn.t||"—")+(sn.by?" "+sn.by:"");
-      const m=document.createElement("span"); m.className="smin"; m.innerHTML="<b>"+sn.m+"</b> min";
-      m.title="Kliko për të ndryshuar minutat";
-      m.onclick=()=>{
-        const v=prompt("Minutat e kësaj seance:", sn.m);
-        if(v===null) return;
-        const n=parseInt(v,10);
-        if(isNaN(n)||n<0) return;
-        if(n===0){ e.sessions.splice(i,1); if(sn.task){ const k=actIdx(e, sn.task); if(k>=0) e.activities.splice(k,1); } }
-        else sn.m=n;
-        queue(d);
-      };
-      const x=document.createElement("button"); x.className="sdel"; x.textContent="×";
-      x.setAttribute("aria-label","Fshi seancën e orës "+(sn.t||""));
-      x.onclick=()=>{
-        e.sessions.splice(i,1);
-        if(sn.task){ const k=actIdx(e, sn.task); if(k>=0) e.activities.splice(k,1); }
-        queue(d);
-      };
-      row.append(t,m,x); sl.appendChild(row);
-    });
-    const tot=document.createElement("p"); tot.className="sempty";
-    tot.textContent = e.sessions.length+" seanca nga 3–5 të rekomanduara";
-    sl.appendChild(tot);
-  }
+  $("#tasks").classList.toggle("dim", skipped);
 
   const tl=$("#tasks"); tl.innerHTML="";
   const tasks=tasksFor(Math.max(day,1));
@@ -1030,23 +898,6 @@ function renderHistory(curDay){
 }
 
 /* ---------- Ngjarjet ---------- */
-document.querySelectorAll("[data-add]").forEach(b=>{
-  b.onclick=()=>{
-    state.draft[state.view] = draftOf(state.view) + Number(b.dataset.add);
-    saveLocal(); render();
-  };
-});
-$("#minusBtn").onclick=()=>{
-  state.draft[state.view] = Math.max(0, draftOf(state.view) - 1);
-  saveLocal(); render();
-};
-$("#commitBtn").onclick=()=>{
-  const d=state.view, m=draftOf(d);
-  if(!m) return;
-  entry(d).sessions.push({m:m, t: d===todayISO() ? nowHM() : null});
-  state.draft[d]=0;
-  queue(d);
-};
 $("#prevDay").onclick=()=>{ state.view=addDays(state.view,-1); render(); };
 $("#nextDay").onclick=()=>{ if(state.view<todayISO()){ state.view=addDays(state.view,1); render(); } };
 let noteTimer=null;
