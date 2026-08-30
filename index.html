@@ -315,7 +315,7 @@ input[type=date],input[type=text]{
   </div>
 
   <div class="card">
-    <div class="total"><b id="totalMin">0</b><i>minuta tummy time</i></div>
+    <div class="total"><b id="totalMin">0</b><i id="totalLbl">minuta tummy time</i></div>
     <div class="targetline">
       <span id="targetTxt">Synimi: —</span>
       <span id="metTxt"></span>
@@ -408,8 +408,67 @@ const AUTH = SUPABASE_URL ? BASE + "/auth/v1" : null;
 const ONLINE_MODE = Boolean(SUPABASE_URL && SUPABASE_KEY);
 const SYNC = () => ONLINE_MODE && !!session && !!state.familyId;
 
+
+/* ---------- Plani fizik pas ditës 90 ---------- */
+const PHYS_PHASES = [
+  {from:91, to:120, name:"Muaji 3–4", min:30, max:45, chunks:4,
+   floor:"Kohë barku", unit:"tummy time",
+   focus:"Shtytja mbi duar të drejta dhe arritja për objekte. Fillon përgatitja për rrotullim.",
+   places:["në dysheme","mbi prehër","në dysheme"],
+   tasks:[
+     {id:"P4a", slot:"m", label:"Lodra mbi kokë — lëre të arrijë me duar",     hint:"5 min"},
+     {id:"P4b", slot:"m", label:"Kapja e duarve në mes, para syve",            hint:"3 min"},
+     {id:"P4c", slot:"d", label:"Rrotullim me ndihmë: bark → shpinë",          hint:"3 min"},
+     {id:"P4d", slot:"d", label:"Gjatë barkut, nxite të shtyjë mbi duar të drejta", hint:"gjatë seancave"},
+     {id:"P4e", slot:"p", label:"Ulje me mbështetje në prehër",                hint:"5 min"},
+     {id:"P4f", slot:"p", label:"Kalim i lodrës nga njëra dorë te tjetra",     hint:"3 min"}
+   ]},
+  {from:121, to:180, name:"Muaji 4–6", min:45, max:60, chunks:4,
+   floor:"Kohë barku", unit:"tummy time",
+   focus:"Rrotullimi në të dy drejtimet dhe ulja me mbështetje. Deri në muajin e 6-të synohen 60 minuta në ditë.",
+   places:["në dysheme","mbi jastëk të ulët","në dysheme"],
+   tasks:[
+     {id:"P5a", slot:"m", label:"Rrotullim bark → shpinë dhe anasjelltas",     hint:"5 min"},
+     {id:"P5b", slot:"m", label:"Arritje me të dyja duart për një objekt",     hint:"5 min"},
+     {id:"P5c", slot:"d", label:"Ulje me duart përpara, mbështetje minimale",  hint:"5–10 min"},
+     {id:"P5d", slot:"d", label:"Lojë me këmbët — kap këmbët, çoji te goja",   hint:"3 min"},
+     {id:"P5e", slot:"p", label:"Objekt pak larg, që ta shtyjë të lëvizë",     hint:"5 min"},
+     {id:"P5f", slot:"p", label:"Kalim dorë më dorë dhe rrotullim i objektit", hint:"3 min"}
+   ]},
+  {from:181, to:270, name:"Muaji 6–9", min:60, max:75, chunks:4,
+   floor:"Lojë në dysheme", unit:"lojë në dysheme",
+   focus:"Ulja pa mbështetje dhe zvarritja. Tummy time bëhet thjesht lojë në dysheme.",
+   places:["","me lodra","mbi tapet"],
+   tasks:[
+     {id:"P6a", slot:"m", label:"Ulje pa mbështetje, lodra anash që të kthehet", hint:"10 min"},
+     {id:"P6b", slot:"m", label:"Pozicion katërkëmbësh, lëkundje para-mbrapa",   hint:"5 min"},
+     {id:"P6c", slot:"d", label:"Zvarritje pas një lodre të vendosur larg",      hint:"10 min"},
+     {id:"P6d", slot:"d", label:"Ngritje në gjunjë pranë një sipërfaqeje të ulët", hint:"5 min"},
+     {id:"P6e", slot:"p", label:"Kapje objektesh të vogla me gishta",            hint:"5 min"},
+     {id:"P6f", slot:"p", label:"Rrahje e dy objekteve me njëri-tjetrin",        hint:"5 min"}
+   ]},
+  {from:271, to:9999, name:"Muaji 9–12", min:60, max:90, chunks:4,
+   floor:"Lojë në dysheme", unit:"lojë në dysheme",
+   focus:"Ngritja në këmbë, ecja anash pranë mobiljeve dhe kapja me dy gishta.",
+   places:["","me pengesa të buta","pranë mobiljeve"],
+   tasks:[
+     {id:"P7a", slot:"m", label:"Ngritje në këmbë duke u mbajtur",           hint:"10 min"},
+     {id:"P7b", slot:"m", label:"Ecje anash pranë divanit ose tavolinës",     hint:"10 min"},
+     {id:"P7c", slot:"d", label:"Zvarritje mbi jastëkë dhe pengesa të buta",  hint:"10 min"},
+     {id:"P7d", slot:"d", label:"Kapja pincë — kokrra të vogla ushqimi",      hint:"5 min"},
+     {id:"P7e", slot:"p", label:"Qëndrim pa mbështetje, disa sekonda",        hint:"5 min"},
+     {id:"P7f", slot:"p", label:"Ecje duke e mbajtur për një dorë",           hint:"10 min"},
+     {id:"P7g", slot:"p", label:"Vendos objekte brenda një kutie dhe nxirri", hint:"5 min"}
+   ]}
+];
+function physPhase(day){
+  return day <= 90 ? null : (PHYS_PHASES.find(p=>day>=p.from && day<=p.to) || PHYS_PHASES[PHYS_PHASES.length-1]);
+}
+
 /* ---------- Plani: synimet ditore ---------- */
 function target(day){
+  const ph=physPhase(day);
+  if(ph) return {min:ph.min, max:ph.max, plus:false};
   const solo = {1:[2,3],2:[3,4],3:[4,5],4:[5,5],5:[5,6],6:[6,7],7:[7,8]};
   if (solo[day]) return {min:solo[day][0], max:solo[day][1], plus:false};
   if (day<=14) return {min:8,  max:12, plus:false};
@@ -453,6 +512,18 @@ function places(day){
   return ["në dysheme","mbi gjoksin e prindit","mbi prehër"];
 }
 function tasksFor(day){
+  const ph=physPhase(day);
+  if(ph){
+    const t=[], pl=ph.places;
+    const map=["m","d","p","m"];
+    splitMinutes(ph.min, ph.chunks).forEach((m,i)=>{
+      const pi=(i + Math.floor(i/pl.length)) % pl.length;
+      t.push({id:"tt"+(i+1), slot:map[i]||"d", label:(ph.floor+" "+pl[pi]).trim(), min:m, tummy:true});
+    });
+    ph.tasks.forEach(x => t.push(Object.assign({}, x)));
+    langPhase(day).tasks.forEach(x => t.push(Object.assign({lang:true}, x)));
+    return t;
+  }
   const t=[], pl=places(day), ch=tummyChunks(day);
   // 2 seanca -> mëngjes+pasdite (si java 1 e planit); 3 -> nga një për seancë; 4 -> shtesa në mëngjes
   const map = {2:["m","p"], 3:["m","d","p"], 4:["m","d","p","m"]}[ch.length] || ["m","d","p"];
@@ -798,11 +869,13 @@ function render(){
   $("#nextDay").style.opacity = d >= todayISO() ? .35 : 1;
 
   const wk = weekOf(Math.max(day,1));
-  $("#weekLbl").textContent = day>84 ? "Ditët 85–90" : "Java "+wk;
-  $("#focusTxt").textContent = FOCUS[wk] || FOCUS[13];
+  const pph=physPhase(day);
+  $("#weekLbl").textContent = pph ? pph.name : (day>84 ? "Ditët 85–90" : "Java "+wk);
+  $("#focusTxt").textContent = pph ? pph.focus : (FOCUS[wk] || FOCUS[13]);
 
   const t = target(Math.max(day,1));
   $("#totalMin").textContent = skipped ? "—" : total;
+  $("#totalLbl").textContent = "minuta " + (pph ? pph.unit : "tummy time");
   $("#targetTxt").textContent = "Synimi: "+t.min+"–"+(t.plus? "30+" : t.max)+" min";
   $("#metTxt").textContent = skipped ? "ditë e kaluar" : (total>=t.min ? "✓ arritur" : "");
   $("#metTxt").className = (!skipped && total>=t.min) ? "ok" : "";
@@ -810,11 +883,16 @@ function render(){
   $("#stripMax").textContent = t.plus ? "30+" : t.max;
 
   const strip=$("#strip"); strip.innerHTML="";
-  for(let i=1;i<=t.max;i++){
-    const s=document.createElement("div");
-    s.className="tick"+(i<=t.min?" zone-min":" zone-max")+(i<=total?" on":"");
-    strip.appendChild(s);
+  const step = t.max>40 ? 5 : 1;                 // shmang vijëza nën-pikselike
+  const nTicks = Math.ceil(t.max/step);
+  const onTo = Math.floor(total/step);
+  const minTick = Math.ceil(t.min/step);
+  for(let i=1;i<=nTicks;i++){
+    const el=document.createElement("div");
+    el.className="tick"+(i<=minTick?" zone-min":" zone-max")+(i<=onTo?" on":"");
+    strip.appendChild(el);
   }
+  strip.setAttribute("aria-label", total+" nga "+t.min+" minuta"+(step>1?" (një vijëz = 5 min)":""));
 
   const dr = draftOf(d);
   $("#pendingVal").textContent = dr;
